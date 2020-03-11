@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>PostSharp.Community.StructuralEquality</id>
+    <version>1.0-preview</version>
+    <title>PostSharp.Community.StructuralEquality</title>
+    <authors>PostSharp Technologies</authors>
+    <owners>PostSharp Technologies</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/postsharp</projectUrl>
+    <icon>icon.png</icon>
+    <description>Automatically generates Equals and GetHashCode for annotated classes.</description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <copyright>PostSharp Technologies</copyright>
+    <tags>postsharp equals gethashcode equality il</tags>
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="PostSharp" version="6.6.1-preview" />
+      </group>
+    </dependencies>
+  </metadata>
+
+  <files>
+    <file src="PostSharp.Community.StructuralEquality\bin\Release\netstandard2.0\PostSharp.Community.StructuralEquality.dll" target="lib\netstandard2.0"/>
+    <file src="PostSharp.Community.StructuralEquality\bin\Release\netstandard2.0\PostSharp.Community.StructuralEquality.xml" target="lib\netstandard2.0"/>
+    <file src="PostSharp.Community.StructuralEquality.Weaver\bin\Release\netstandard2.0\PostSharp.Community.StructuralEquality.Weaver.dll" target="tools"/>
+    <file src="icon.png" target="" />
+  </files>
+</package>

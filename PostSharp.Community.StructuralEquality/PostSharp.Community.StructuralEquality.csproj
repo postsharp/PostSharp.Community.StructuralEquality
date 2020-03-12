@@ -4,12 +4,10 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <RootNamespace>PostSharp.Community.DeepSerializable</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="PostSharp.Redist" Version="6.6.1-preview" />
-        <!-- We need this to use the PostSharp MulticastAttribute. -->
     </ItemGroup>
     
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

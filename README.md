@@ -44,5 +44,5 @@ Add `[StructuralEquality]` to the classes where you want it to apply.
 #### Copyright notices
 Published under the MIT license.
 
-* Copyright © PostSharp Technologies
+* Copyright © PostSharp Technologies, Rafał Jasica, Simon Cropp, and contributors 
 * Icon by Pixel Buddha, https://www.flaticon.com

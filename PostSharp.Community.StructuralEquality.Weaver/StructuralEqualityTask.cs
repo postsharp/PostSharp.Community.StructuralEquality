@@ -22,21 +22,24 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             while ( annotationsOfType.MoveNext() )
             {
                 IAnnotationInstance annotation = annotationsOfType.Current;
+                StructuralEqualityAttribute config = EqualityConfiguration.ExtractFrom(annotation.Value);
                 if ( annotation.TargetElement is TypeDefDeclaration enhancedType )
                 {
-                    this.AddEqualsAndGetHashCodeTo( enhancedType );
+                    if (!config.DoNotAddEquals)
+                    {
+                        this.AddEqualsTo(enhancedType, config);
+                    }
+                    if (!config.DoNotAddGetHashCode)
+                    {
+                        this.AddGetHashCodeTo(enhancedType);
+                    }
+                    // TODO implement operators
                 }
             }
             return true;
         }
 
-        private void AddEqualsAndGetHashCodeTo(TypeDefDeclaration enhancedType)
-        {            
-            this.AddEqualsTo( enhancedType );
-            this.AddGetHashCodeTo( enhancedType );
-        }
-        
-        private void AddEqualsTo( TypeDefDeclaration enhancedType )
+        private void AddEqualsTo(TypeDefDeclaration enhancedType, StructuralEqualityAttribute config)
         {            
             // TODO test for existing Equals and do nothing if it's present
             // Create signature

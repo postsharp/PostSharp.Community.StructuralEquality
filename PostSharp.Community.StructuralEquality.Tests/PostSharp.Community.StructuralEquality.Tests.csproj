@@ -5,9 +5,7 @@
         <IsPackable>false</IsPackable>
         <PostSharpSearchPath>..\PostSharp.Community.StructuralEquality.Weaver\bin\$(Configuration)\netstandard2.0</PostSharpSearchPath>
         <RootNamespace>PostSharp.Community.StructuralEquality.Tests</RootNamespace>
-        <!-- Normally, PostSharp searches for weaver assemblies in the tools directories of NuGet packages. But, since we're
-        using the weaver directly instead of using it in a NuGet package here, we must add the weaver to the PostSharp
-        search path manually.-->
+        <NoWarn>CS0660,CS0661;CS0659</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,6 +20,11 @@
         on the PostSharp search path before our build, so this project reference ensures that the weaver builds before this project. -->
       <ProjectReference Include="..\PostSharp.Community.StructuralEquality.Weaver\PostSharp.Community.StructuralEquality.Weaver.csproj" />
       <ProjectReference Include="..\PostSharp.Community.StructuralEquality\PostSharp.Community.StructuralEquality.csproj" />
+      <ProjectReference Include="..\ReferencedDependency\ReferencedDependency.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.CSharp" Condition="'$(TargetFramework)' == 'net48'" />
     </ItemGroup>
 
 </Project>

@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Community.Structu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Community.StructuralEquality.Tests", "PostSharp.Community.StructuralEquality.Tests\PostSharp.Community.StructuralEquality.Tests.csproj", "{F50CA89A-7A52-4934-B3FC-2FFB69813421}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReferencedDependency", "ReferencedDependency\ReferencedDependency.csproj", "{5A978CC2-B79A-4E77-8B96-49C9EE419A71}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{F50CA89A-7A52-4934-B3FC-2FFB69813421}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F50CA89A-7A52-4934-B3FC-2FFB69813421}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F50CA89A-7A52-4934-B3FC-2FFB69813421}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A978CC2-B79A-4E77-8B96-49C9EE419A71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A978CC2-B79A-4E77-8B96-49C9EE419A71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A978CC2-B79A-4E77-8B96-49C9EE419A71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A978CC2-B79A-4E77-8B96-49C9EE419A71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

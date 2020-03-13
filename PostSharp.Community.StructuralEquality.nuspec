@@ -8,12 +8,12 @@
     <owners>PostSharp Technologies</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
-    <projectUrl>https://github.com/postsharp</projectUrl>
+    <projectUrl>https://github.com/postsharp/PostSharp.Community.StructuralEquality</projectUrl>
     <icon>icon.png</icon>
     <description>Automatically generates Equals and GetHashCode for annotated classes.</description>
     <releaseNotes>Initial release.</releaseNotes>
     <copyright>PostSharp Technologies</copyright>
-    <tags>postsharp equals gethashcode equality il</tags>
+    <tags>postsharp equals gethashcode equality ilweaving</tags>
     <dependencies>
       <group targetFramework=".NETStandard2.0">
         <dependency id="PostSharp" version="6.6.1-preview" />

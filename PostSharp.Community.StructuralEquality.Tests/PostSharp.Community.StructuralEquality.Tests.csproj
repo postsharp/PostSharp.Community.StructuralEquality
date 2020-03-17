@@ -1,10 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
+        <TargetFrameworks>net48</TargetFrameworks>
         <IsPackable>false</IsPackable>
         <PostSharpSearchPath>..\PostSharp.Community.StructuralEquality.Weaver\bin\$(Configuration)\netstandard2.0</PostSharpSearchPath>
         <RootNamespace>PostSharp.Community.StructuralEquality.Tests</RootNamespace>
+        <PostSharpAttachDebugger>True</PostSharpAttachDebugger>
+        <PostSharpHost>Native</PostSharpHost>
         <NoWarn>CS0660,CS0661;CS0659</NoWarn>
     </PropertyGroup>
 

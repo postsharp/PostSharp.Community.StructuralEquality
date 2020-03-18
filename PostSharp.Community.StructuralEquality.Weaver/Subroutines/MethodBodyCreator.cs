@@ -4,7 +4,7 @@ using PostSharp.Sdk.Utilities;
 
 namespace PostSharp.Community.StructuralEquality.Weaver
 {
-    public class MethodBodyCreator
+    public static class MethodBodyCreator
     {
         /// <summary>
         /// Creates a new method body and assigns it to <paramref name="hostMethod"/>. The method body looks as described in <see cref="CreatedEmptyMethod"/>.

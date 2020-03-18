@@ -26,28 +26,58 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             // Find Object.GetHashCode():
             INamedType tObject = this.Project.Module.Cache.GetIntrinsic(IntrinsicType.Object).GetTypeDefinition();
             this.GetHashCodeMethodReference = this.Project.Module.FindMethod(tObject, "GetHashCode");
-            
+
             var annotationRepositoryService = this.Project.GetService<IAnnotationRepositoryService>();
-            var ignoredFields = IgnoredFields.GetIgnoredFields(annotationRepositoryService, Project.GetService<ICompilerAdapterService>());
-       
-            IEnumerator<IAnnotationInstance> annotationsOfType = annotationRepositoryService.GetAnnotationsOfType( typeof(StructuralEqualityAttribute), false, false );
-            while ( annotationsOfType.MoveNext() )
+            var ignoredFields = IgnoredFields.GetIgnoredFields(annotationRepositoryService,
+                Project.GetService<ICompilerAdapterService>());
+
+            IEnumerator<IAnnotationInstance> annotationsOfType =
+                annotationRepositoryService.GetAnnotationsOfType(typeof(StructuralEqualityAttribute), false, false);
+            LinkedList<EqualsType> toEnhance = new LinkedList<EqualsType>();
+ 
+            while (annotationsOfType.MoveNext())
             {
                 IAnnotationInstance annotation = annotationsOfType.Current;
-                StructuralEqualityAttribute config = EqualityConfiguration.ExtractFrom(annotation.Value);
-                if ( annotation.TargetElement is TypeDefDeclaration enhancedType )
+                if (annotation.TargetElement is TypeDefDeclaration enhancedType)
                 {
-                    if (!config.DoNotAddEquals)
+                    TypeDefDeclaration baseClass = enhancedType.BaseTypeDef;
+                    StructuralEqualityAttribute config = EqualityConfiguration.ExtractFrom(annotation.Value);
+                    LinkedListNode<EqualsType> node = toEnhance.First;
+                    EqualsType newType = new EqualsType(enhancedType, config);
+                    while (node != null)
                     {
-                        this.AddEqualsTo(enhancedType, config);
+                        if (node.Value.EnhancedType == baseClass)
+                        {
+                            toEnhance.AddAfter(node, newType);
+                            break;
+                        }
+                        node = node.Next;
                     }
-                    if (!config.DoNotAddGetHashCode)
+
+                    if (node == null)
                     {
-                        this.AddGetHashCodeTo(enhancedType, config, ignoredFields);
+                        toEnhance.AddFirst(newType);
                     }
-                    // TODO implement operators
                 }
             }
+
+            foreach (EqualsType enhancedTypeData in toEnhance)
+            {
+                var enhancedType = enhancedTypeData.EnhancedType;
+                var config = enhancedTypeData.Config;
+                if (!config.DoNotAddEquals)
+                {
+                    this.AddEqualsTo(enhancedType, config);
+                }
+
+                if (!config.DoNotAddGetHashCode)
+                {
+                    this.AddGetHashCodeTo(enhancedType, config, ignoredFields);
+                }
+
+                // TODO implement operators
+            }
+
             return true;
         }
 
@@ -138,8 +168,8 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 // Start with 0
                 writer.EmitInstruction( OpCodeNumber.Ldc_I4_0 );
                 writer.EmitInstructionLocalVariable(OpCodeNumber.Stloc, resultVariable);
+                bool first = true;
 
-                // TODO (elsewhere) unchecked
                 if (!config.IgnoreBaseClass)
                 {
                     bool ignorable = enhancedType.BaseTypeDef.Name == "System.Object" ||
@@ -147,26 +177,28 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                     if (!ignorable)
                     {
                         var baseHashCode = Project.Module.FindMethod(enhancedType.BaseTypeDef, "GetHashCode", BindingOptions.DontThrowException, 0);
+                        // TODO Gael says: using FindOverride would be better
                         if (baseHashCode != null)
                         {
+                            writer.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, resultVariable);
                             writer.EmitInstruction(OpCodeNumber.Ldarg_0);
                             writer.EmitInstructionMethod(OpCodeNumber.Call, baseHashCode);
                             writer.EmitInstruction(OpCodeNumber.Add);
                             writer.EmitInstructionLocalVariable(OpCodeNumber.Stloc, resultVariable);
+                            first = false;
                         }
                     }
                 }
                 
                 // For each field, do "hash = hash * 397 ^ field?.GetHashCode();
-                bool first = true;
                 foreach ( FieldDefDeclaration field in enhancedType.Fields )
                 {
                     if ( field.IsConst || field.IsStatic || ignoredFields.Contains(field) )
                     {
                         continue;
                     }
-
-                    var variable = this.AddFieldCode(field, first, writer, resultVariable, method, enhancedType);
+                    
+                    this.AddFieldCode(field, first, writer, resultVariable, method, enhancedType);
                     first = false;
                 }
                 
@@ -192,11 +224,8 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             }
         }
 
-        private void AddCustomLogicCall(TypeDefDeclaration enhancedType, InstructionWriter writer,
-            MethodDefDeclaration customMethod)
+        private void AddCustomLogicCall(TypeDefDeclaration enhancedType, InstructionWriter writer, MethodDefDeclaration customMethod)
         {
-
-
             var parameters = customMethod.Parameters;
             if (parameters.Count != 0)
             {
@@ -209,15 +238,12 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 throw new Exception($"Custom GetHashCode of type {enhancedType.ShortName} have to return int.");
             }
             
-            // TODO generics
-            
             writer.EmitInstruction(OpCodeNumber.Ldarg_0);
-            writer.EmitInstructionMethod(enhancedType.IsValueTypeSafe() == true ? OpCodeNumber.Call : OpCodeNumber.Callvirt, customMethod);
+            writer.EmitInstructionMethod(enhancedType.IsValueTypeSafe() == true ? OpCodeNumber.Call : OpCodeNumber.Callvirt, customMethod.GetCanonicalGenericInstance());
         }
 
-        private LocalVariableSymbol AddFieldCode(FieldDefDeclaration field, bool isFirst, InstructionWriter writer, LocalVariableSymbol resultVariable, MethodDefDeclaration method, TypeDefDeclaration enhancedType)
+        private void AddFieldCode(FieldDefDeclaration field, bool isFirst, InstructionWriter writer, LocalVariableSymbol resultVariable, MethodDefDeclaration method, TypeDefDeclaration enhancedType)
         {
-            LocalVariableSymbol variable = null;
             bool isCollection;
             var propType = field.FieldType;
             bool isValueType = propType.IsValueTypeSafe() == true;
@@ -242,7 +268,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
             if (propType.GetReflectionName().StartsWith("System.Nullable"))
             {
-              //  variable = AddNullableProperty(field, writer, enhancedType, variable);
+                AddNullableProperty(field, writer, enhancedType, resultVariable);
             }
             else if (isCollection && propType.GetReflectionName() != "System.String")
             {
@@ -273,7 +299,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 writer.EmitInstructionLocalVariable(OpCodeNumber.Stloc, resultVariable);
             }
 
-            return variable;
                     // writer.EmitInstructionInt32( OpCodeNumber.Ldc_I4, 397 );
                     // writer.EmitInstruction( OpCodeNumber.Mul );
                     // writer.EmitInstruction( OpCodeNumber.Ldarg_0 ); // TODO what if I am a struct?
@@ -282,6 +307,25 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                     // // TODO GetHashCode(), actually
                     // // TODO what if the field is a struct?
                     // writer.EmitInstruction( OpCodeNumber.Xor );
+        }
+
+        private void AddNullableProperty(FieldDefDeclaration field, InstructionWriter writer, TypeDefDeclaration enhancedType, LocalVariableSymbol resultVariable)
+        {
+            var hasValueMethod = enhancedType.Module.FindMethod(field.FieldType.GetTypeDefinition(), "get_HasValue");
+            field.FieldType.ContainsGenericArguments()
+            writer.EmitInstructionField(OpCodeNumber.Ldflda, field.GetCanonicalGenericInstance());
+            writer.EmitInstructionMethod(OpCodeNumber.Call, hasValueMethod.getgene());
+            writer.IfNotZero((then) =>
+            {
+                writer.EmitInstructionField(OpCodeNumber.Ldfld, field.GetCanonicalGenericInstance());
+                writer.EmitInstructionType(OpCodeNumber.Box, field.FieldType);
+                writer.EmitInstructionMethod(OpCodeNumber.Callvirt, GetHashCodeMethodReference);
+            },
+            (elseBranch) =>
+            {
+                writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);
+            });
+            
         }
 
         private void AddNormalCode(FieldDefDeclaration field, InstructionWriter writer, TypeDefDeclaration enhancedType)
@@ -301,7 +345,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private void LoadVariable(FieldDefDeclaration field, InstructionWriter writer, TypeDefDeclaration enhancedType)
         {
             writer.EmitInstruction(OpCodeNumber.Ldarg_0);
-            writer.EmitInstructionField(OpCodeNumber.Ldfld, field);
+            writer.EmitInstructionField(OpCodeNumber.Ldfld, field.GetCanonicalGenericInstance());
         }
 
         private void AddMultiplicityByMagicNumber(bool isFirst, InstructionWriter writer, LocalVariableSymbol resultVariable, bool isCollection)

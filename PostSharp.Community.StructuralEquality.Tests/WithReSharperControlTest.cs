@@ -67,6 +67,8 @@ namespace PostSharp.Community.StructuralEquality.Tests
             if (obj.GetType() != this.GetType()) return false;
             return Equals((ReSharperCreated) obj);
         }
+        
+        
 
         public override int GetHashCode()
         {

@@ -306,20 +306,6 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
         }
 
         [Fact]
-        public void GetHashCode_should_return_value_for_class_with_guid_in_parent()
-        {
-            var guid = "{f6ab1abe-5811-40e9-8154-35776d2e5106}";
-
-            var first = new ReferenceObject();
-            first.Name = "Test";
-            first.Id = Guid.Parse(guid);
-
-            var result = first.GetHashCode();
-
-            Assert.NotEqual(0, result);
-        }
-
-        [Fact]
         public void GetHashCode_should_return_value_for_class_with_generic_property2()
         {
             var first = new ClassWithGenericProperty();

@@ -3,7 +3,7 @@ using PostSharp.Sdk.CodeModel.Collections;
 
 namespace PostSharp.Community.StructuralEquality.Weaver
 {
-    public class EqualityConfiguration
+    public static class EqualityConfiguration
     {
         public static StructuralEqualityAttribute ExtractFrom(IAnnotationValue trueAttribute)
         {

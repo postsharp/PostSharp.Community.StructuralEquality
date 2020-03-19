@@ -7,7 +7,9 @@ namespace PostSharp.Community.StructuralEquality.Tests
 
     public class AdditionalObject
     {
+#pragma warning disable 649
         private int? Hello;
+#pragma warning restore 649
 
         public int GetIt()
         {

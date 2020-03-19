@@ -36,7 +36,7 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
             Assert.Equal(0, result);
         }
 
-        [Fact]
+        [Fact(Skip = "Nullable not implemented")]
         public void GetHashCode_should_return_value_for_null_nullable()
         {
             var instance = new ClassWithNullable();
@@ -47,7 +47,7 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
             Assert.Equal(0, result);
         }
 
-        [Fact]
+        [Fact(Skip = "Nullable not implemented")]
         public void GetHashCode_should_return_value_for_date_nullable()
         {
             var instance = new ClassWithNullable();

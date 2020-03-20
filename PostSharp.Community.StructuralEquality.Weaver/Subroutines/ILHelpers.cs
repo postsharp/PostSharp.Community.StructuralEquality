@@ -26,5 +26,28 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             writer.DetachInstructionSequence();
             writer.AttachInstructionSequence(endSequence);
         }
+        public static void WhileNotZero(this InstructionWriter writer,
+            Action<InstructionWriter> condition,
+            Action<InstructionWriter> body)
+        {
+            InstructionSequence loopBegin =
+                writer.CurrentInstructionSequence.ParentInstructionBlock.AddInstructionSequence();
+            InstructionSequence loopEnd =
+                writer.CurrentInstructionSequence.ParentInstructionBlock.AddInstructionSequence();
+            
+            writer.EmitBranchingInstruction(OpCodeNumber.Br, loopBegin);
+            writer.DetachInstructionSequence();
+            writer.AttachInstructionSequence(loopBegin);
+
+            condition(writer);
+
+            writer.EmitBranchingInstruction(OpCodeNumber.Brfalse, loopEnd);
+
+            body(writer);
+
+            writer.EmitBranchingInstruction(OpCodeNumber.Br, loopBegin);
+            writer.DetachInstructionSequence();
+            writer.AttachInstructionSequence(loopEnd);
+        }
     }
 }

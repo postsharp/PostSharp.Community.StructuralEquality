@@ -14,8 +14,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
     public class EqualsInjection
     {
         private readonly IGenericMethodDefinition referenceEqualsMethod;
-        private readonly Project project;
-        private readonly TypeDefDeclaration objectType;
+        private readonly IntrinsicTypeSignature objectType;
         private readonly ITypeSignature booleanType;
         private readonly IGenericMethodDefinition getTypeMethod;
         private readonly IGenericMethodDefinition instanceEqualsMethod;
@@ -23,22 +22,22 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
         public EqualsInjection(Project project)
         {
-            this.project = project;
+            this.objectType = project.Module.Cache.GetIntrinsic(IntrinsicType.Object);
+            this.booleanType = project.Module.Cache.GetIntrinsic( IntrinsicType.Boolean );
             
-            this.objectType = this.project.Module.Cache.GetIntrinsic(IntrinsicType.Object).GetTypeDefinition();
-            this.booleanType = this.project.Module.Cache.GetIntrinsic( IntrinsicType.Boolean );
+            var objectTypeDef = this.objectType.GetTypeDefinition();
             
-            this.referenceEqualsMethod = this.project.Module.FindMethod( this.objectType, "ReferenceEquals" );
-            this.instanceEqualsMethod = this.project.Module.FindMethod( this.objectType, "Equals", 1 );
-            this.staticEqualsMethod = this.project.Module.FindMethod( this.objectType, "Equals", 2 );
-            this.getTypeMethod = this.project.Module.FindMethod( this.objectType, "GetType" );
+            this.referenceEqualsMethod = project.Module.FindMethod( objectTypeDef, "ReferenceEquals" );
+            this.instanceEqualsMethod = project.Module.FindMethod( objectTypeDef, "Equals", 1 );
+            this.staticEqualsMethod = project.Module.FindMethod( objectTypeDef, "Equals", 2 );
+            this.getTypeMethod = project.Module.FindMethod( objectTypeDef, "GetType" );
         }
         
         public void AddEqualsTo( TypeDefDeclaration enhancedType, StructuralEqualityAttribute config,
             ISet<FieldDefDeclaration> ignoredFields )
         {
             var typedEqualsMethod = this.InjectEqualsType(enhancedType, config, ignoredFields );
-            // this.InjectEqualsObject(enhancedType, config, typedEqualsMethod);
+            this.InjectEqualsObject(enhancedType, config, typedEqualsMethod);
         }
 
         private MethodDefDeclaration InjectEqualsType( TypeDefDeclaration enhancedType,
@@ -119,6 +118,28 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
                 this.InjectReferenceEquals( writer, methodBody, enhancedType );
 
+                if ( enhancedType.IsValueType() )
+                {
+                    // if (other is Typed)
+                    writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
+                    writer.EmitInstructionType( OpCodeNumber.Isinst, enhancedType );
+                    writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
+                    
+                    // return this.Equals((Typed)other);
+                    writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
+                    writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
+                    writer.EmitInstructionType( OpCodeNumber.Unbox_Any, enhancedType );
+                    writer.EmitInstructionMethod( OpCodeNumber.Call, typedEqualsMethod );
+                    
+                    writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, methodBody.ReturnVariable );
+                    writer.EmitBranchingInstruction( OpCodeNumber.Br, methodBody.ReturnSequence );
+                    
+                    writer.DetachInstructionSequence();
+                    return;
+                }
+                
+                // Reference types.
+                
                 switch ( config.TypeCheck )
                 {
                     case TypeCheck.ExactlyTheSameTypeAsThis:
@@ -137,18 +158,13 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 
                 // Go to typed check.
                 writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
-                if ( enhancedType.IsValueType() )
-                {
-                    writer.EmitInstructionType( OpCodeNumber.Unbox_Any, enhancedType );
-                }
-                else
-                {
-                    writer.EmitInstructionType( OpCodeNumber.Castclass, enhancedType );
-                }
+                writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
+                writer.EmitInstructionType( OpCodeNumber.Castclass, enhancedType );
                 
                 writer.EmitInstructionMethod( OpCodeNumber.Call, typedEqualsMethod );
                 
-                writer.EmitBranchingInstruction( OpCodeNumber.Br_S, methodBody.ReturnSequence );
+                writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, methodBody.ReturnVariable );
+                writer.EmitBranchingInstruction( OpCodeNumber.Br, methodBody.ReturnSequence );
                 writer.DetachInstructionSequence();
             }
         }

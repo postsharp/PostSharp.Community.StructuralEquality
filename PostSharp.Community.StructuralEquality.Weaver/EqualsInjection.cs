@@ -67,7 +67,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 // return base.Equals(other) && this.field1 == other.field1 && ...;
                 // Find the base method.
 
-                if ( !enhancedType.IsValueType() )
+                if ( !config.IgnoreBaseClass && !enhancedType.IsValueType() )
                 {
                     var baseEqualsMethod = this.instanceEqualsMethod.FindOverride( enhancedType.BaseTypeDef, true ).Method;
                     
@@ -79,7 +79,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                     writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
                 }
                 
-                var fields = this.GetFieldsForComparison( enhancedType, ignoredFields, config.IgnoreBaseClassFields );
+                var fields = this.GetFieldsForComparison( enhancedType, ignoredFields );
                 
                 foreach ( var field in fields )
                 {
@@ -330,7 +330,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         }
 
         private IEnumerable<FieldDefDeclaration> GetFieldsForComparison( TypeDefDeclaration enhancedType,
-            ISet<FieldDefDeclaration> ignoredFields, bool ignoreBaseClassFields )
+            ISet<FieldDefDeclaration> ignoredFields )
         {
             foreach ( FieldDefDeclaration field in enhancedType.Fields )
             {
@@ -338,8 +338,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 {
                     continue;
                 }
-                
-                // TODO ignoreBaseClassFields.
 
                 yield return field;
             }

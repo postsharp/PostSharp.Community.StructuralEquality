@@ -73,7 +73,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                     
                     writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
                     writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-                    writer.EmitInstructionMethod( OpCodeNumber.Call, baseEqualsMethod );
+                    writer.EmitInstructionMethod( OpCodeNumber.Call, baseEqualsMethod.Translate( enhancedType.Module ) );
                     
                     // base.Equals(other) returned false.
                     writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );

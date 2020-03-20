@@ -15,6 +15,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
     {
         private readonly IGenericMethodDefinition referenceEqualsMethod;
         private readonly IntrinsicTypeSignature objectType;
+        private readonly TypeDefDeclaration objectTypeDef;
         private readonly ITypeSignature booleanType;
         private readonly IGenericMethodDefinition getTypeMethod;
         private readonly IGenericMethodDefinition instanceEqualsMethod;
@@ -25,7 +26,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             this.objectType = project.Module.Cache.GetIntrinsic(IntrinsicType.Object);
             this.booleanType = project.Module.Cache.GetIntrinsic( IntrinsicType.Boolean );
             
-            var objectTypeDef = this.objectType.GetTypeDefinition();
+            this.objectTypeDef = this.objectType.GetTypeDefinition();
             
             this.referenceEqualsMethod = project.Module.FindMethod( objectTypeDef, "ReferenceEquals" );
             this.instanceEqualsMethod = project.Module.FindMethod( objectTypeDef, "Equals", 1 );
@@ -67,7 +68,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 // return base.Equals(other) && this.field1 == other.field1 && ...;
                 // Find the base method.
 
-                if ( !config.IgnoreBaseClass && !enhancedType.IsValueType() )
+                if ( !config.IgnoreBaseClass && !enhancedType.IsValueType() && enhancedType.BaseTypeDef != this.objectTypeDef )
                 {
                     var baseEqualsMethod = this.instanceEqualsMethod.FindOverride( enhancedType.BaseTypeDef, true ).Method;
                     

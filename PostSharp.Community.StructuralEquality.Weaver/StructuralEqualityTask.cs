@@ -31,6 +31,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             var toEnhance = GetTypesToEnhance(annotationRepositoryService);
 
             HashCodeInjection hashCodeInjection = new HashCodeInjection(this.Project);
+            EqualsInjection equalsInjection = new EqualsInjection(this.Project);
 
             foreach (EqualsType enhancedTypeData in toEnhance)
             {
@@ -38,7 +39,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 var config = enhancedTypeData.Config;
                 if (!config.DoNotAddEquals)
                 {
-                    this.AddEqualsTo(enhancedType, config);
+                    equalsInjection.AddEqualsTo(enhancedType, config, ignoredFields );
                 }
 
                 if (!config.DoNotAddGetHashCode)
@@ -86,61 +87,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             }
 
             return toEnhance;
-        }
-
-        private void AddEqualsTo(TypeDefDeclaration enhancedType, StructuralEqualityAttribute config)
-        {            
-            // TODO test for existing Equals and do nothing if it's present
-            // Create signature
-            MethodDefDeclaration equalsDeclaration = new MethodDefDeclaration
-                                               {
-                                                   Name = "Equals",
-                                                   CallingConvention = CallingConvention.HasThis,
-                                                   Attributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig
-                                               };
-            enhancedType.Methods.Add( equalsDeclaration );
-            equalsDeclaration.Parameters.Add( new ParameterDeclaration( 0, "other", enhancedType.Module.Cache.GetIntrinsic( IntrinsicType.Object )  ));
-            equalsDeclaration.ReturnParameter = ParameterDeclaration.CreateReturnParameter( enhancedType.Module.Cache.GetIntrinsic( IntrinsicType.Boolean ) );
-            
-
-            // Generate ReSharper-style Equals comparison:
-            using ( InstructionWriter writer = InstructionWriter.GetInstance() )
-            {
-                CreatedEmptyMethod equals = MethodBodyCreator.CreateModifiableMethodBody( writer, equalsDeclaration );
-                LocalVariableSymbol afterCast = @equals.PrincipalBlock.DefineLocalVariable( enhancedType, "otherAfterCast" );
-                writer.AttachInstructionSequence( equals.PrincipalBlock.AddInstructionSequence() );
-                // TODO if (other == null) return false;
-                // TODO if (this == other) return true;
-                writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-                writer.EmitInstructionType( OpCodeNumber.Isinst, enhancedType );
-                writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, afterCast );
-                // TODO if (topOfStack == null) return false;
-                
-                // For each field, do "if (!this.field?.Equals(otherAfterCast.field)) return false;"
-                foreach ( FieldDefDeclaration field in enhancedType.Fields )
-                {
-                    if ( field.IsConst || field.IsStatic )
-                    {
-                        continue;
-                    }
-
-                    writer.EmitInstruction( OpCodeNumber.Ldarg_0 ); // TODO what if I am a struct?
-                    writer.EmitInstructionField( OpCodeNumber.Ldfld, field );
-                    writer.EmitInstructionLocalVariable( OpCodeNumber.Ldloc, afterCast ); // TODO what if they are a struct?
-                    writer.EmitInstructionField( OpCodeNumber.Ldfld, field ); 
-                    // TODO check for null
-                    // TODO Equals(), actually
-                    // TODO what if the field is a struct?
-                    writer.EmitInstruction( OpCodeNumber.Ceq );
-                    writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, equals.ReturnSequence );
-                }
-
-                // If we go here, return true.
-                writer.EmitInstruction( OpCodeNumber.Ldc_I4_1 );
-                writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, equals.ReturnVariable );
-                writer.EmitBranchingInstruction( OpCodeNumber.Br, equals.ReturnSequence );
-                writer.DetachInstructionSequence();
-            }
         }
     }
 }

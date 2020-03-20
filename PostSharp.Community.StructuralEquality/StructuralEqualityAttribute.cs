@@ -38,5 +38,9 @@ namespace PostSharp.Community.StructuralEquality
         /// </summary>
         public bool IgnoreBaseClass;
 
+        /// <summary>
+        /// If true, fields of the base class are ignored.
+        /// </summary>
+        public bool IgnoreBaseClassFields;
     }
 }

@@ -1,11 +1,21 @@
 using System;
-using System.Reflection.Emit;
 using PostSharp.Sdk.CodeModel;
 
-namespace PostSharp.Community.StructuralEquality.Weaver
+namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
 {
     public static class ILHelpers
     {
+        /// <summary>
+        /// Emits:
+        /// <code>
+        ///   brfalse elseBranch;
+        ///   thenStatement();
+        ///   br end;
+        /// elseBranch:
+        ///   elseStatement();
+        /// end: 
+        /// </code>
+        /// </summary>
         public static void IfNotZero(this InstructionWriter writer,
             Action<InstructionWriter> thenStatement,
             Action<InstructionWriter> elseStatement)
@@ -26,6 +36,19 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             writer.DetachInstructionSequence();
             writer.AttachInstructionSequence(endSequence);
         }
+        
+        /// <summary>
+        /// Emits:
+        /// <code>
+        ///   br begin;
+        /// begin:
+        ///   condition();
+        ///   brfalse end;
+        ///   body();
+        ///   br begin;
+        /// end:
+        /// </code> 
+        /// </summary>
         public static void WhileNotZero(this InstructionWriter writer,
             Action<InstructionWriter> condition,
             Action<InstructionWriter> body)

@@ -6,7 +6,7 @@
         <SkipPostSharp>True</SkipPostSharp>
         <!-- PostSharp doesn't actually modify the weaver assembly, so we can save some time by disabling it here. -->
         <LangVersion>8</LangVersion>
-        <RootNamespace>PostSharp.Community.StructuralEquality.Weaver</RootNamespace>
+        <NoWarn>CS0649</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

@@ -18,6 +18,7 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
             var result = first.Equals(second);
 
             Assert.True(result);
+            Assert.True( first.CustomCalled );
         }
 
         [Fact]
@@ -32,6 +33,7 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
             var result = first.Equals(second);
 
             Assert.True(result);
+            Assert.True( first.CustomCalled );
         }
 
         [Fact]
@@ -46,6 +48,7 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
 
             Assert.True(first.Equals(second));
             Assert.False(first.Equals(third));
+            Assert.True( first.CustomCalled );
         }
 
         [Fact]

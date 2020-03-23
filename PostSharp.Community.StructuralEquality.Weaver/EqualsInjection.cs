@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using PostSharp.Community.StructuralEquality.Weaver.Subroutines;
 using PostSharp.Sdk.CodeModel;
+using PostSharp.Sdk.CodeModel.Helpers;
 using PostSharp.Sdk.CodeModel.TypeSignatures;
 using PostSharp.Sdk.Extensibility;
 
@@ -51,7 +52,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         }
 
         private MethodDefDeclaration InjectEqualsType( TypeDefDeclaration enhancedType,
-            StructuralEqualityAttribute config, ISet<FieldDefDeclaration> ignoredFields )
+            StructuralEqualityAttribute config, ICollection<FieldDefDeclaration> ignoredFields )
         {
             // public virtual bool Equals( Base other )
             var equalsDeclaration = new MethodDefDeclaration
@@ -63,6 +64,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             enhancedType.Methods.Add( equalsDeclaration );
             equalsDeclaration.Parameters.Add( new ParameterDeclaration( 0, "other", enhancedType ));
             equalsDeclaration.ReturnParameter = ParameterDeclaration.CreateReturnParameter( this.booleanType );
+            CompilerGeneratedAttributeHelper.AddCompilerGeneratedAttribute(equalsDeclaration);
             
             using ( var writer = InstructionWriter.GetInstance() )
             {
@@ -96,6 +98,28 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                     this.EmitEqualsField( writer, methodBody, field );
                 }
                 
+                // Custom equality methods.
+                foreach (var customEqualsMethod in enhancedType.Methods)
+                {
+                    if (customEqualsMethod.CustomAttributes.GetOneByType(
+                            "PostSharp.Community.StructuralEquality.AdditionalEqualsMethodAttribute") != null)
+                    {
+                        if ( customEqualsMethod.IsStatic ||
+                             !customEqualsMethod.ReturnParameter.ParameterType.IsIntrinsic( IntrinsicType.Boolean ) ||
+                             customEqualsMethod.Parameters.Count != 1 ||
+                             !customEqualsMethod.Parameters[0].ParameterType.GetTypeDefinition().Equals( enhancedType )
+                        )
+                        {
+                            CustomMethodSignatureError();
+                        }
+
+                        writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
+                        writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
+                        writer.EmitInstructionMethod( OpCodeNumber.Call, customEqualsMethod );
+                        writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
+                    }
+                }
+                
                 // return true;
                 writer.EmitInstruction( OpCodeNumber.Ldc_I4_1 );
                 writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, methodBody.ReturnVariable );
@@ -104,6 +128,11 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             }
 
             return equalsDeclaration;
+        }
+
+        private static void CustomMethodSignatureError()
+        {
+            throw new Exception("Method marked with [CustomEqualsInternal] must be public, instance, must return bool and accept 1 parameter of the same type as the declaring type");
         }
 
         private void InjectEqualsObject( TypeDefDeclaration enhancedType, StructuralEqualityAttribute config, MethodDefDeclaration typedEqualsMethod )
@@ -118,6 +147,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             enhancedType.Methods.Add( equalsDeclaration );
             equalsDeclaration.Parameters.Add( new ParameterDeclaration( 0, "other", this.objectType ));
             equalsDeclaration.ReturnParameter = ParameterDeclaration.CreateReturnParameter( this.booleanType );
+            CompilerGeneratedAttributeHelper.AddCompilerGeneratedAttribute(equalsDeclaration);
             
             using ( var writer = InstructionWriter.GetInstance() )
             {

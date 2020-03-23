@@ -5,6 +5,9 @@ using PostSharp.Sdk.Extensibility;
 
 namespace PostSharp.Community.StructuralEquality.Weaver
 {
+    /// <summary>
+    /// Overwrites equality operators with a call to the equality method.
+    /// </summary>
     public class OperatorInjection
     {
         private readonly IGenericMethodDefinition weaveMethod;

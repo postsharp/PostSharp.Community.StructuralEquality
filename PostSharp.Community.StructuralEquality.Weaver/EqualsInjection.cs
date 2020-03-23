@@ -10,6 +10,9 @@ using PostSharp.Sdk.Extensibility;
 
 namespace PostSharp.Community.StructuralEquality.Weaver
 {
+    /// <summary>
+    /// Adds IEquatable<T> and implements equality methods.
+    /// </summary>
     public class EqualsInjection
     {
         private readonly IGenericMethodDefinition referenceEqualsMethod;

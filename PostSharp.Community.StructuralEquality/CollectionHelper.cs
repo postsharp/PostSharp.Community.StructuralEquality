@@ -8,11 +8,7 @@ namespace PostSharp.Community.StructuralEquality
         {
             if ( left == null )
             {
-                if ( right == null )
-                {
-                    return true;
-                }
-                return false;
+                return right == null;
             }
             if ( right == null )
             {

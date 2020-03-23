@@ -52,8 +52,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 {
                     hashCodeInjection.AddGetHashCodeTo(enhancedType, config, ignoredFields);
                 }
-
-                // TODO implement operators
             }
 
             return true;

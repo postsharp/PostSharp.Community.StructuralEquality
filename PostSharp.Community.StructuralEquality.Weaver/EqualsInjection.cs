@@ -21,6 +21,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private readonly IGenericMethodDefinition staticEqualsMethod;
         private readonly IGenericMethodDefinition collectionEqualsMethod;
         private readonly IGenericMethodDefinition getTypeFromHandleMethod;
+        private readonly ITypeSignature equatableInterface;
 
         public EqualsInjection( Project project )
         {
@@ -40,6 +41,8 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
             var typeTypeDef = project.Module.Cache.GetType( typeof(Type) ).GetTypeDefinition();
             this.getTypeFromHandleMethod = project.Module.FindMethod( typeTypeDef, "GetTypeFromHandle" );
+
+            this.equatableInterface = project.Module.Cache.GetType( typeof(IEquatable<>) );
         }
 
         public void AddEqualsTo( TypeDefDeclaration enhancedType, StructuralEqualityAttribute config,
@@ -47,6 +50,16 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         {
             var typedEqualsMethod = this.InjectEqualsType( enhancedType, config, ignoredFields );
             this.InjectEqualsObject( enhancedType, config, typedEqualsMethod );
+
+            this.AddEquatable( enhancedType );
+        }
+
+        private void AddEquatable( TypeDefDeclaration enhancedType )
+        {
+            var genericInstance = this.equatableInterface.GetTypeDefinition().GetGenericInstance( new GenericMap(
+                enhancedType.Module,
+                new[] {enhancedType.GetCanonicalGenericInstance()} ) );
+            enhancedType.InterfaceImplementations.Add( genericInstance.TranslateType( enhancedType.Module ) );
         }
 
         private MethodDefDeclaration InjectEqualsType( TypeDefDeclaration enhancedType,

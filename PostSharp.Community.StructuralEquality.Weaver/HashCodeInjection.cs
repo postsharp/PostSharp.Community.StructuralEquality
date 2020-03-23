@@ -1,4 +1,6 @@
+
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -12,14 +14,25 @@ namespace PostSharp.Community.StructuralEquality.Weaver
     public class HashCodeInjection
     {
         private IGenericMethodDefinition GetHashCodeMethodReference;
+        private int magicNumber = 397;
+        private INamedType IEnumeratorType;
+        private IMethod MoveNext;
+        private IMethod GetCurrent;
+        private IMethod GetEnumerator;
         public Project Project { get; }
 
         public HashCodeInjection(Project project)
         {
             Project = project;
             // Find Object.GetHashCode():
-            INamedType tObject = this.Project.Module.Cache.GetIntrinsic(IntrinsicType.Object).GetTypeDefinition();
-            this.GetHashCodeMethodReference = this.Project.Module.FindMethod(tObject, "GetHashCode");
+            ModuleDeclaration module = this.Project.Module;
+            INamedType tObject = module.Cache.GetIntrinsic(IntrinsicType.Object).GetTypeDefinition();
+            this.GetHashCodeMethodReference = module.FindMethod(tObject, "GetHashCode");
+            IEnumeratorType = (INamedType)module.Cache.GetType(typeof(IEnumerator));
+            MoveNext = module.FindMethod(IEnumeratorType, "MoveNext");
+            GetCurrent = module.FindMethod(IEnumeratorType, "get_Current");
+            INamedType tEnumerable = (INamedType) module.Cache.GetType(typeof(IEnumerable));
+            GetEnumerator = module.FindMethod(tEnumerable, "GetEnumerator");
         }
         public void AddGetHashCodeTo(TypeDefDeclaration enhancedType, StructuralEqualityAttribute config, ISet<FieldDefDeclaration> ignoredFields)
         {
@@ -67,7 +80,9 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                         {
                             writer.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, resultVariable);
                             writer.EmitInstruction(OpCodeNumber.Ldarg_0);
-                            writer.EmitInstructionMethod(OpCodeNumber.Call, baseHashCode.GetCanonicalGenericInstance());
+                            // TODO what if it is two steps removed?
+                            writer.EmitInstructionMethod(OpCodeNumber.Call,
+                                baseHashCode.GetGenericInstance(enhancedType.BaseType.GetGenericContext()));
                             writer.EmitInstruction(OpCodeNumber.Add);
                             writer.EmitInstructionLocalVariable(OpCodeNumber.Stloc, resultVariable);
                             first = false;
@@ -143,7 +158,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             }
             else
             {
-                // TODO
                 isCollection = propType.IsCollection() ||
                                propType.TypeSignatureElementKind == TypeSignatureElementKind.Array;
             }
@@ -156,7 +170,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             }
             else if (isCollection && propType.GetReflectionName() != "System.String")
             {
-              //  AddCollectionCode(field, writer, resultVariable, method, enhancedType);
+               AddCollectionCode(field, writer, resultVariable, method, enhancedType);
             }
             else if (isValueType || isGenericParameter)
             {
@@ -182,36 +196,139 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             {
                 writer.EmitInstructionLocalVariable(OpCodeNumber.Stloc, resultVariable);
             }
-
-                    // writer.EmitInstructionInt32( OpCodeNumber.Ldc_I4, 397 );
-                    // writer.EmitInstruction( OpCodeNumber.Mul );
-                    // writer.EmitInstruction( OpCodeNumber.Ldarg_0 ); // TODO what if I am a struct?
-                    // writer.EmitInstructionField( OpCodeNumber.Ldfld, field );
-                    // // TODO check for null
-                    // // TODO GetHashCode(), actually
-                    // // TODO what if the field is a struct?
-                    // writer.EmitInstruction( OpCodeNumber.Xor );
         }
+
+        private void AddCollectionCode(FieldDefDeclaration field, InstructionWriter writer,
+            LocalVariableSymbol resultVariable, MethodDefDeclaration method, TypeDefDeclaration enhancedType)
+        {
+            if (field.FieldType.IsValueTypeSafe() == true)
+            {
+                AddCollectionCodeInternal(field, resultVariable, method, enhancedType, writer);
+            }
+            else
+            {
+                LoadVariable(field, writer, enhancedType);
+                writer.IfNotZero(
+                    writer => { AddCollectionCodeInternal(field, resultVariable, method, enhancedType, writer); },
+                    (elsew) => { });
+            }
+        }
+
+        private void AddCollectionCodeInternal(FieldDefDeclaration field, LocalVariableSymbol resultVariable,
+            MethodDefDeclaration method, TypeDefDeclaration enhancedType, InstructionWriter writer)
+        {
+            LoadVariable(field, writer, enhancedType);
+
+            var enumeratorVariable =
+                method.MethodBody.RootInstructionBlock.DefineLocalVariable(IEnumeratorType, "enumeratorVariable");
+            var currentVariable =
+                method.MethodBody.RootInstructionBlock.DefineLocalVariable(
+                    method.Module.Cache.GetIntrinsic(IntrinsicType.Object), "enumeratorObject");
+
+            AddGetEnumerator(writer, enumeratorVariable, field);
+
+            AddCollectionLoop(resultVariable, writer, enumeratorVariable, currentVariable);
+        }
+
+        void AddCollectionLoop(LocalVariableSymbol resultVariable, InstructionWriter t,
+            LocalVariableSymbol enumeratorVariable, LocalVariableSymbol currentVariable)
+    {
+        t.WhileNotZero(
+            c =>
+            {
+                c.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, enumeratorVariable);
+                c.EmitInstructionMethod(OpCodeNumber.Callvirt, MoveNext);
+            },
+            b =>
+            {
+                b.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, resultVariable);
+                b.EmitInstructionInt32(OpCodeNumber.Ldc_I4, magicNumber);
+                b.EmitInstruction(OpCodeNumber.Mul);
+
+                b.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, enumeratorVariable);
+                b.EmitInstructionMethod(OpCodeNumber.Callvirt, GetCurrent);
+                b.EmitInstructionLocalVariable(OpCodeNumber.Stloc, currentVariable);
+
+                b.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, currentVariable);
+                
+                b.IfNotZero(
+                    bt =>
+                    {
+                        bt.EmitInstructionLocalVariable(OpCodeNumber.Ldloc, currentVariable);
+                        bt.EmitInstructionMethod(OpCodeNumber.Callvirt, GetHashCodeMethodReference);
+                    },
+                    et =>
+                    {
+                        et.EmitInstruction(OpCodeNumber.Ldc_I4_0);
+                    });
+
+                b.EmitInstruction(OpCodeNumber.Xor);
+                b.EmitInstructionLocalVariable(OpCodeNumber.Stloc, resultVariable);
+            });
+    }
+        
+    void AddGetEnumerator(InstructionWriter ins, LocalVariableSymbol variable, FieldDefDeclaration property)
+    {
+        if (property.FieldType.IsValueTypeSafe() == true)
+        {
+            ins.EmitInstructionType(OpCodeNumber.Box, property.FieldType);
+        }
+        ins.EmitInstructionMethod(OpCodeNumber.Callvirt, GetEnumerator);
+        ins.EmitInstructionLocalVariable(OpCodeNumber.Stloc, variable);
+    }
 
         private void AddNullableProperty(FieldDefDeclaration field, InstructionWriter writer, TypeDefDeclaration enhancedType, LocalVariableSymbol resultVariable)
         {
             // TODO make nullable work
-            writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);
-            // var hasValueMethod = enhancedType.Module.FindMethod(field.FieldType.GetTypeDefinition(), "get_HasValue");
-            // field.FieldType.ContainsGenericArguments()
-            // writer.EmitInstructionField(OpCodeNumber.Ldflda, field.GetCanonicalGenericInstance());
-            // writer.EmitInstructionMethod(OpCodeNumber.Call, hasValueMethod.getgene());
-            // writer.IfNotZero((then) =>
-            // {
-            //     writer.EmitInstructionField(OpCodeNumber.Ldfld, field.GetCanonicalGenericInstance());
-            //     writer.EmitInstructionType(OpCodeNumber.Box, field.FieldType);
-            //     writer.EmitInstructionMethod(OpCodeNumber.Callvirt, GetHashCodeMethodReference);
-            // },
-            // (elseBranch) =>
-            // {
-            //     writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);
-            // });
+            IMethodSignature getHasValue = new MethodSignature(field.Module, CallingConvention.HasThis, field.Module.Cache.GetIntrinsic(IntrinsicType.Boolean), new List<ITypeSignature>(), 0);
+            var hasValueMethod = field.FieldType.FindMethod("get_HasValue", getHasValue);
+            writer.EmitInstruction(OpCodeNumber.Ldarg_0);
+            writer.EmitInstructionField(OpCodeNumber.Ldflda, field.GetCanonicalGenericInstance());
+            writer.EmitInstructionMethod(OpCodeNumber.Call, hasValueMethod.GetInstance(field.Module, hasValueMethod.GenericMap));
             
+            writer.IfNotZero((then) =>
+            {
+                writer.EmitInstruction(OpCodeNumber.Ldarg_0);
+                writer.EmitInstructionField(OpCodeNumber.Ldfld, field.GetCanonicalGenericInstance());
+                writer.EmitInstructionType(OpCodeNumber.Box, field.FieldType);
+                writer.EmitInstructionMethod(OpCodeNumber.Callvirt, GetHashCodeMethodReference);
+            },
+            (elseBranch) =>
+            {
+                writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);
+            });
+            // var getMethod = ModuleDefinition.ImportReference(property.GetGetMethod(type));
+            // ins.If(c =>
+            //     {
+            //         var nullablePropertyResolved = property.PropertyType.Resolve();
+            //         var nullablePropertyImported = ModuleDefinition.ImportReference(property.PropertyType);
+            //
+            //         ins.Add(Instruction.Create(OpCodes.Ldarg_0));
+            //         c.Add(Instruction.Create(OpCodes.Call, getMethod));
+            //
+            //         variable = new VariableDefinition(getMethod.ReturnType);
+            //         c.Add(Instruction.Create(OpCodes.Stloc, variable));
+            //         c.Add(Instruction.Create(OpCodes.Ldloca, variable));
+            //
+            //         var hasValuePropertyResolved = nullablePropertyResolved.Properties.First(x => x.Name == "HasValue").Resolve();
+            //         var hasMethod = ModuleDefinition.ImportReference(hasValuePropertyResolved.GetGetMethod(nullablePropertyImported));
+            //         c.Add(Instruction.Create(OpCodes.Call, hasMethod));
+            //     },
+            //     t =>
+            //     {
+            //         var nullableProperty = ModuleDefinition.ImportReference(property.PropertyType);
+            //
+            //         t.Add(Instruction.Create(OpCodes.Ldarg_0));
+            //         var imp = property.GetGetMethod(type);
+            //         var imp2 = ModuleDefinition.ImportReference(imp);
+            //
+            //         t.Add(Instruction.Create(OpCodes.Call, imp2));
+            //         t.Add(Instruction.Create(OpCodes.Box, nullableProperty));
+            //         t.Add(Instruction.Create(OpCodes.Callvirt, GetHashcode));
+            //     },
+            //     e => e.Add(Instruction.Create(OpCodes.Ldc_I4_0)));
+            // return variable;
+
         }
 
         private void AddNormalCode(FieldDefDeclaration field, InstructionWriter writer, TypeDefDeclaration enhancedType)

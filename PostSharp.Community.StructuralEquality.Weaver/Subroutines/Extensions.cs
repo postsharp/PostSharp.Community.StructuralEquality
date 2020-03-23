@@ -7,9 +7,11 @@ namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
     {
         public static bool IsCollection(this ITypeSignature type)
         {
-            var stringType = type.Module.Cache.GetIntrinsic( IntrinsicType.String );
-            var iEnumerableType = type.Module.Cache.GetType( typeof(IEnumerable) );
-            return !type.IsAssignableTo( stringType ) && type.IsAssignableTo( iEnumerableType );
+            return type.IsAssignableToRuntimeType(typeof(IEnumerable)) &&
+                   !type.IsAssignableToRuntimeType(typeof(string));
+            // return false;
+            // !type..Equals("String") &&
+            //        type.Interfaces.Any(i => i.InterfaceType.Name.Equals("IEnumerable"));
         }
     }
 }

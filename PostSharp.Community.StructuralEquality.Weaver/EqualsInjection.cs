@@ -62,7 +62,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 CallingConvention = CallingConvention.HasThis
             };
             enhancedType.Methods.Add( equalsDeclaration );
-            equalsDeclaration.Parameters.Add( new ParameterDeclaration( 0, "other", enhancedType ));
+            equalsDeclaration.Parameters.Add( new ParameterDeclaration( 0, "other", enhancedType.GetCanonicalGenericInstance() ) );
             equalsDeclaration.ReturnParameter = ParameterDeclaration.CreateReturnParameter( this.booleanType );
             CompilerGeneratedAttributeHelper.AddCompilerGeneratedAttribute(equalsDeclaration);
             
@@ -131,7 +131,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
                     writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
                     writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-                    writer.EmitInstructionMethod( OpCodeNumber.Call, customEqualsMethod );
+                    writer.EmitInstructionMethod( OpCodeNumber.Call, customEqualsMethod.GetCanonicalGenericInstance() );
                     writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
                 }
             }
@@ -159,24 +159,25 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             using ( var writer = InstructionWriter.GetInstance() )
             {
                 var methodBody = MethodBodyCreator.CreateModifiableMethodBody( writer, equalsDeclaration );
-                // var typedOther = methodBody.PrincipalBlock.DefineLocalVariable( enhancedType, "typedOther" );
                 
                 writer.AttachInstructionSequence( methodBody.PrincipalBlock.AddInstructionSequence() );
 
                 this.InjectReferenceEquals( writer, methodBody, enhancedType );
 
+                var canonicalType = enhancedType.GetCanonicalGenericInstance();
+
                 if ( enhancedType.IsValueType() )
                 {
                     // if (other is Typed)
                     writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-                    writer.EmitInstructionType( OpCodeNumber.Isinst, enhancedType );
+                    writer.EmitInstructionType( OpCodeNumber.Isinst, canonicalType );
                     writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
                     
                     // return this.Equals((Typed)other);
                     writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
                     writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-                    writer.EmitInstructionType( OpCodeNumber.Unbox_Any, enhancedType );
-                    writer.EmitInstructionMethod( OpCodeNumber.Call, typedEqualsMethod );
+                    writer.EmitInstructionType( OpCodeNumber.Unbox_Any, canonicalType );
+                    writer.EmitInstructionMethod( OpCodeNumber.Call, typedEqualsMethod.GetCanonicalGenericInstance() );
                     
                     writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, methodBody.ReturnVariable );
                     writer.EmitBranchingInstruction( OpCodeNumber.Br, methodBody.ReturnSequence );
@@ -186,7 +187,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 }
                 
                 // Reference types.
-                
                 switch ( config.TypeCheck )
                 {
                     case TypeCheck.ExactlyTheSameTypeAsThis:
@@ -204,15 +204,13 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 
                 // Types are different, return false.
                 writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
-
-                var canonicalType = enhancedType.GetCanonicalGenericInstance();
                 
                 // Go to typed check.
                 writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
                 writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
                 writer.EmitInstructionType( OpCodeNumber.Castclass, canonicalType );
                 
-                writer.EmitInstructionMethod( OpCodeNumber.Call, typedEqualsMethod );
+                writer.EmitInstructionMethod( OpCodeNumber.Call, typedEqualsMethod.GetCanonicalGenericInstance() );
                 
                 writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, methodBody.ReturnVariable );
                 writer.EmitBranchingInstruction( OpCodeNumber.Br, methodBody.ReturnSequence );
@@ -327,7 +325,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             {
                 writer.EmitInstruction( ldarg );
                 writer.EmitInstructionField( OpCodeNumber.Ldfld, field );
-                if ( !(field.FieldType is GenericParameterTypeSignature) && field.FieldType.IsValueType() )
+                if ( (field.FieldType is GenericParameterTypeSignature) || field.FieldType.IsValueType() )
                 {
                     writer.EmitInstructionType( OpCodeNumber.Box, canonicalType );
                 }

@@ -280,22 +280,55 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private void AddNullableProperty(FieldDefDeclaration field, InstructionWriter writer, TypeDefDeclaration enhancedType, LocalVariableSymbol resultVariable)
         {
             // TODO make nullable work
-            writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);
-            // var hasValueMethod = enhancedType.Module.FindMethod(field.FieldType.GetTypeDefinition(), "get_HasValue");
-            // field.FieldType.ContainsGenericArguments()
-            // writer.EmitInstructionField(OpCodeNumber.Ldflda, field.GetCanonicalGenericInstance());
-            // writer.EmitInstructionMethod(OpCodeNumber.Call, hasValueMethod.getgene());
-            // writer.IfNotZero((then) =>
-            // {
-            //     writer.EmitInstructionField(OpCodeNumber.Ldfld, field.GetCanonicalGenericInstance());
-            //     writer.EmitInstructionType(OpCodeNumber.Box, field.FieldType);
-            //     writer.EmitInstructionMethod(OpCodeNumber.Callvirt, GetHashCodeMethodReference);
-            // },
-            // (elseBranch) =>
-            // {
-            //     writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);
-            // });
+            IMethodSignature getHasValue = new MethodSignature(field.Module, CallingConvention.HasThis, field.Module.Cache.GetIntrinsic(IntrinsicType.Boolean), new List<ITypeSignature>(), 0);
+            var hasValueMethod = field.FieldType.FindMethod("get_HasValue", getHasValue);
+            writer.EmitInstruction(OpCodeNumber.Ldarg_0);
+            writer.EmitInstructionField(OpCodeNumber.Ldflda, field.GetCanonicalGenericInstance());
+            writer.EmitInstructionMethod(OpCodeNumber.Call, hasValueMethod.GetInstance(field.Module, hasValueMethod.GenericMap));
             
+            writer.IfNotZero((then) =>
+            {
+                writer.EmitInstruction(OpCodeNumber.Ldarg_0);
+                writer.EmitInstructionField(OpCodeNumber.Ldfld, field.GetCanonicalGenericInstance());
+                writer.EmitInstructionType(OpCodeNumber.Box, field.FieldType);
+                writer.EmitInstructionMethod(OpCodeNumber.Callvirt, GetHashCodeMethodReference);
+            },
+            (elseBranch) =>
+            {
+                writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);
+            });
+            // var getMethod = ModuleDefinition.ImportReference(property.GetGetMethod(type));
+            // ins.If(c =>
+            //     {
+            //         var nullablePropertyResolved = property.PropertyType.Resolve();
+            //         var nullablePropertyImported = ModuleDefinition.ImportReference(property.PropertyType);
+            //
+            //         ins.Add(Instruction.Create(OpCodes.Ldarg_0));
+            //         c.Add(Instruction.Create(OpCodes.Call, getMethod));
+            //
+            //         variable = new VariableDefinition(getMethod.ReturnType);
+            //         c.Add(Instruction.Create(OpCodes.Stloc, variable));
+            //         c.Add(Instruction.Create(OpCodes.Ldloca, variable));
+            //
+            //         var hasValuePropertyResolved = nullablePropertyResolved.Properties.First(x => x.Name == "HasValue").Resolve();
+            //         var hasMethod = ModuleDefinition.ImportReference(hasValuePropertyResolved.GetGetMethod(nullablePropertyImported));
+            //         c.Add(Instruction.Create(OpCodes.Call, hasMethod));
+            //     },
+            //     t =>
+            //     {
+            //         var nullableProperty = ModuleDefinition.ImportReference(property.PropertyType);
+            //
+            //         t.Add(Instruction.Create(OpCodes.Ldarg_0));
+            //         var imp = property.GetGetMethod(type);
+            //         var imp2 = ModuleDefinition.ImportReference(imp);
+            //
+            //         t.Add(Instruction.Create(OpCodes.Call, imp2));
+            //         t.Add(Instruction.Create(OpCodes.Box, nullableProperty));
+            //         t.Add(Instruction.Create(OpCodes.Callvirt, GetHashcode));
+            //     },
+            //     e => e.Add(Instruction.Create(OpCodes.Ldc_I4_0)));
+            // return variable;
+
         }
 
         private void AddNormalCode(FieldDefDeclaration field, InstructionWriter writer, TypeDefDeclaration enhancedType)

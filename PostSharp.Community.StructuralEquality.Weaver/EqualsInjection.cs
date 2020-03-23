@@ -79,17 +79,21 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 // return base.Equals(other) && this.field1 == other.field1 && ...;
                 // Find the base method.
 
-                if ( !config.IgnoreBaseClass && !enhancedType.IsValueType() && enhancedType.BaseTypeDef != this.objectTypeDef )
+                if ( !config.IgnoreBaseClass && !enhancedType.IsValueType() )
                 {
                     var baseEqualsMethod = this.instanceEqualsMethod.FindOverride( enhancedType.BaseTypeDef, true )
                         .GetInstance( enhancedType.Module, enhancedType.BaseType.GetGenericContext() );
 
-                    writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
-                    writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-                    writer.EmitInstructionMethod( OpCodeNumber.Call, baseEqualsMethod );
-                    
-                    // base.Equals(other) returned false.
-                    writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
+                    // Do not invoke object.Equals();
+                    if ( baseEqualsMethod.DeclaringType.GetTypeDefinition() != this.objectTypeDef )
+                    {
+                        writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
+                        writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
+                        writer.EmitInstructionMethod( OpCodeNumber.Call, baseEqualsMethod );
+                        
+                        // base.Equals(other) returned false.
+                        writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
+                    }
                 }
                 
                 var fields = GetFieldsForComparison( enhancedType, ignoredFields );

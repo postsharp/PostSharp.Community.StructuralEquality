@@ -4,7 +4,8 @@ using PostSharp.Extensibility;
 namespace PostSharp.Community.StructuralEquality
 {
     /// <summary>
-    /// TODO
+    /// PostSharp creates an Equals and GetHashCode implementation for the target annotated type. See the GitHub
+    /// repository for this add-in for options and details on how the implementation works.
     /// </summary>
     [MulticastAttributeUsage(MulticastTargets.Class | MulticastTargets.Struct)]
     [RequirePostSharp("PostSharp.Community.StructuralEquality.Weaver", "StructuralEqualityTask")]
@@ -34,7 +35,8 @@ namespace PostSharp.Community.StructuralEquality
         public StringComparison StringComparisonStyle { get; set; }
 
         /// <summary>
-        /// If true, <c>base.Equals()</c> is not called in the generated <c>Equals</c> method.
+        /// If true, <c>base.Equals()</c> is not called in the generated <c>Equals</c> method. The same is true for
+        /// <c>GetHashCode</c>.
         /// </summary>
         public bool IgnoreBaseClass { get; set; }
 

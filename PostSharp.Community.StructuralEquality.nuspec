@@ -4,7 +4,7 @@
     <id>PostSharp.Community.StructuralEquality</id>
     <version>1.0-preview</version>
     <title>PostSharp.Community.StructuralEquality</title>
-    <authors>PostSharp Technologies</authors>
+    <authors>PostSharp Technologies, Rafał Jasica, Simon Cropp, and contributors</authors>
     <owners>PostSharp Technologies</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>

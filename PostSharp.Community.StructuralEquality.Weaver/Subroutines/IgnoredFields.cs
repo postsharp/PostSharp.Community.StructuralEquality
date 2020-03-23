@@ -8,10 +8,16 @@ namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
 {
     public static class IgnoredFields
     {
-        public static ISet<FieldDefDeclaration> GetIgnoredFields(IAnnotationRepositoryService annotations, ICompilerAdapterService compilerAdapterService)
+        /// <summary>
+        /// Gets the set of all fields that should not participate in Equals and GetHashCode generated because they're
+        /// the target of [IgnoreDuringEquals].
+        /// </summary>
+        public static ISet<FieldDefDeclaration> GetIgnoredFields(IAnnotationRepositoryService annotations, 
+            ICompilerAdapterService compilerAdapterService)
         {
             HashSet<FieldDefDeclaration> fields = new HashSet<FieldDefDeclaration>();
-            IEnumerator<IAnnotationInstance> ignoredFieldsAnnotations = annotations.GetAnnotationsOfType( typeof(IgnoreDuringEqualsAttribute), false, false );
+            IEnumerator<IAnnotationInstance> ignoredFieldsAnnotations = 
+                annotations.GetAnnotationsOfType( typeof(IgnoreDuringEqualsAttribute), false, false );
             while (ignoredFieldsAnnotations.MoveNext())
             {
                 IAnnotationInstance annotationInstance = ignoredFieldsAnnotations.Current;

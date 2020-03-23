@@ -19,16 +19,17 @@ namespace PostSharp.Community.StructuralEquality.Weaver
     [TaskDependency("AnnotationRepository", IsRequired = true, Position = DependencyPosition.Before)]
     public class StructuralEqualityTask : Task
     {
+        [ImportService] 
+        private IAnnotationRepositoryService annotationRepositoryService;
+        
         public override bool Execute()
         {
-            var annotationRepositoryService = this.Project.GetService<IAnnotationRepositoryService>();
-            
             // Find ignored fields
             var ignoredFields = IgnoredFields.GetIgnoredFields(annotationRepositoryService,
                 Project.GetService<ICompilerAdapterService>());
 
             // Sort types by inheritance hierarchy
-            var toEnhance = GetTypesToEnhance(annotationRepositoryService);
+            var toEnhance = this.GetTypesToEnhance();
 
             HashCodeInjection hashCodeInjection = new HashCodeInjection(this.Project);
             EqualsInjection equalsInjection = new EqualsInjection(this.Project);
@@ -57,7 +58,12 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             return true;
         }
 
-        private static LinkedList<EqualsType> GetTypesToEnhance(IAnnotationRepositoryService annotationRepositoryService)
+        /// <summary>
+        /// Gets types for which Equals or GetHashCode should be synthesized, in such an order that base classes come before
+        /// derived classes. This way, when Equals for a derived class is being created, you can be already sure that
+        /// the Equals for the base class was already created (if the base class was target of [StructuralEquality].
+        /// </summary>
+        private LinkedList<EqualsType> GetTypesToEnhance()
         {
             IEnumerator<IAnnotationInstance> annotationsOfType =
                 annotationRepositoryService.GetAnnotationsOfType(typeof(StructuralEqualityAttribute), false, false);

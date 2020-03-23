@@ -9,9 +9,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
         {
             return type.IsAssignableToRuntimeType(typeof(IEnumerable)) &&
                    !type.IsAssignableToRuntimeType(typeof(string));
-            // return false;
-            // !type..Equals("String") &&
-            //        type.Interfaces.Any(i => i.InterfaceType.Name.Equals("IEnumerable"));
         }
     }
 }

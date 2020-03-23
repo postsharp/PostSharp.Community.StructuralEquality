@@ -201,21 +201,33 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private void AddCollectionCode(FieldDefDeclaration field, InstructionWriter writer,
             LocalVariableSymbol resultVariable, MethodDefDeclaration method, TypeDefDeclaration enhancedType)
         {
-            LoadVariable(field, writer, enhancedType);
-            writer.IfNotZero(writer =>
+            if (field.FieldType.IsValueTypeSafe() == true)
+            {
+                AddCollectionCodeInternal(field, resultVariable, method, enhancedType, writer);
+            }
+            else
             {
                 LoadVariable(field, writer, enhancedType);
+                writer.IfNotZero(
+                    writer => { AddCollectionCodeInternal(field, resultVariable, method, enhancedType, writer); },
+                    (elsew) => { });
+            }
+        }
 
-                var enumeratorVariable =
-                    method.MethodBody.RootInstructionBlock.DefineLocalVariable(IEnumeratorType, "enumeratorVariable");
-                var currentVariable =
-                    method.MethodBody.RootInstructionBlock.DefineLocalVariable(
-                        method.Module.Cache.GetIntrinsic(IntrinsicType.Object), "enumeratorObject");
+        private void AddCollectionCodeInternal(FieldDefDeclaration field, LocalVariableSymbol resultVariable,
+            MethodDefDeclaration method, TypeDefDeclaration enhancedType, InstructionWriter writer)
+        {
+            LoadVariable(field, writer, enhancedType);
 
-                AddGetEnumerator(writer, enumeratorVariable, field);
+            var enumeratorVariable =
+                method.MethodBody.RootInstructionBlock.DefineLocalVariable(IEnumeratorType, "enumeratorVariable");
+            var currentVariable =
+                method.MethodBody.RootInstructionBlock.DefineLocalVariable(
+                    method.Module.Cache.GetIntrinsic(IntrinsicType.Object), "enumeratorObject");
 
-                AddCollectionLoop(resultVariable, writer, enumeratorVariable, currentVariable);
-            }, (elsew) => { });
+            AddGetEnumerator(writer, enumeratorVariable, field);
+
+            AddCollectionLoop(resultVariable, writer, enumeratorVariable, currentVariable);
         }
 
         void AddCollectionLoop(LocalVariableSymbol resultVariable, InstructionWriter t,

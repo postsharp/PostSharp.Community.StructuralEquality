@@ -22,10 +22,11 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private readonly IGenericMethodDefinition instanceEqualsMethod;
         private readonly IGenericMethodDefinition staticEqualsMethod;
         private readonly IGenericMethodDefinition collectionEqualsMethod;
+        private readonly IGenericMethodDefinition getTypeFromHandleMethod;
 
         public EqualsInjection(Project project)
         {
-            this.objectType = project.Module.Cache.GetIntrinsic(IntrinsicType.Object);
+            this.objectType = project.Module.Cache.GetIntrinsic( IntrinsicType.Object );
             this.booleanType = project.Module.Cache.GetIntrinsic( IntrinsicType.Boolean );
             
             this.objectTypeDef = this.objectType.GetTypeDefinition();
@@ -37,6 +38,9 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             
             var collectionHelperTypeDef = project.Module.Cache.GetType( typeof(CollectionHelper) ).GetTypeDefinition();
             this.collectionEqualsMethod = project.Module.FindMethod( collectionHelperTypeDef, "Equals", declaration => declaration.IsStatic );
+
+            var typeTypeDef = project.Module.Cache.GetType( typeof(Type) ).GetTypeDefinition();
+            this.getTypeFromHandleMethod = project.Module.FindMethod( typeTypeDef, "GetTypeFromHandle" );
         }
         
         public void AddEqualsTo( TypeDefDeclaration enhancedType, StructuralEqualityAttribute config,
@@ -152,9 +156,11 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                         this.InjectExactlyTheSameTypeAsThis( writer, enhancedType );
                         break;
                     case TypeCheck.ExactlyOfType:
-                        throw new NotImplementedException();
+                        this.InjectExactlyOfType( writer, enhancedType );
+                        break;
                     case TypeCheck.SameTypeOrSubtype:
-                        throw new NotImplementedException();
+                        this.InjectSameTypeOrSubtype( writer, enhancedType );
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -191,6 +197,30 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             writer.EmitInstructionMethod( OpCodeNumber.Callvirt, this.getTypeMethod );
             
             writer.EmitInstruction( OpCodeNumber.Ceq );
+        }
+
+        private void InjectExactlyOfType( InstructionWriter writer, TypeDefDeclaration enhancedType )
+        {
+            writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
+            if ( enhancedType.IsValueType() )
+            {
+                var canonical = enhancedType.GetCanonicalGenericInstance();
+                writer.EmitInstructionType( OpCodeNumber.Ldobj, canonical );
+                writer.EmitInstructionType( OpCodeNumber.Box, canonical );
+            }
+            
+            writer.EmitInstructionMethod( OpCodeNumber.Call, this.getTypeMethod );
+            
+            writer.EmitInstructionType( OpCodeNumber.Ldtoken, enhancedType );
+            writer.EmitInstructionMethod( OpCodeNumber.Call, this.getTypeFromHandleMethod );
+            
+            writer.EmitInstruction( OpCodeNumber.Ceq );
+        }
+
+        private void InjectSameTypeOrSubtype( InstructionWriter writer, TypeDefDeclaration enhancedType )
+        {
+            writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
+            writer.EmitInstructionType( OpCodeNumber.Isinst, enhancedType );
         }
 
         private void EmitEqualsField( InstructionWriter writer, CreatedEmptyMethod methodBody,

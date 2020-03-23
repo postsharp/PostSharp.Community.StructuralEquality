@@ -9,9 +9,16 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         {
             StructuralEqualityAttribute equality = new StructuralEqualityAttribute();
             MemberValuePairCollection namedArguments = trueAttribute.NamedArguments;
-            equality.DoNotAddEquals = (bool)(namedArguments[nameof(StructuralEqualityAttribute.DoNotAddEquals)]?.Value.Value ?? false);
-            equality.DoNotAddGetHashCode = (bool)(namedArguments[nameof(StructuralEqualityAttribute.DoNotAddGetHashCode)]?.Value.Value ?? false);
-            equality.IgnoreBaseClass = (bool)(namedArguments[nameof(StructuralEqualityAttribute.IgnoreBaseClass)]?.Value.Value ?? false);;
+            equality.DoNotAddEquals =
+                (bool) ( namedArguments[nameof(StructuralEqualityAttribute.DoNotAddEquals)]?.Value.Value ?? false );
+            equality.DoNotAddGetHashCode =
+                (bool) ( namedArguments[nameof(StructuralEqualityAttribute.DoNotAddGetHashCode)]?.Value.Value ??
+                         false );
+            equality.IgnoreBaseClass =
+                (bool) ( namedArguments[nameof(StructuralEqualityAttribute.IgnoreBaseClass)]?.Value.Value ?? false );
+            equality.TypeCheck =
+                (TypeCheck) ( namedArguments[nameof(StructuralEqualityAttribute.TypeCheck)]?.Value.Value ??
+                              TypeCheck.ExactlyTheSameTypeAsThis );
             return equality;
         }
     }

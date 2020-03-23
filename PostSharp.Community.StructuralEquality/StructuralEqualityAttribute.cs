@@ -36,6 +36,6 @@ namespace PostSharp.Community.StructuralEquality
         /// <summary>
         /// If true, <c>base.Equals()</c> is not called in the generated <c>Equals</c> method.
         /// </summary>
-        public bool IgnoreBaseClass;
+        public bool IgnoreBaseClass { get; set; }
     }
 }

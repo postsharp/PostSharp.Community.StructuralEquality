@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using PostSharp.Community.StructuralEquality.Weaver.Subroutines;
 using PostSharp.Sdk.CodeModel;
@@ -20,6 +21,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private readonly IGenericMethodDefinition getTypeMethod;
         private readonly IGenericMethodDefinition instanceEqualsMethod;
         private readonly IGenericMethodDefinition staticEqualsMethod;
+        private readonly IGenericMethodDefinition collectionEqualsMethod;
 
         public EqualsInjection(Project project)
         {
@@ -32,6 +34,9 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             this.instanceEqualsMethod = project.Module.FindMethod( objectTypeDef, "Equals", 1 );
             this.staticEqualsMethod = project.Module.FindMethod( objectTypeDef, "Equals", 2 );
             this.getTypeMethod = project.Module.FindMethod( objectTypeDef, "GetType" );
+            
+            var collectionHelperTypeDef = project.Module.Cache.GetType( typeof(CollectionHelper) ).GetTypeDefinition();
+            this.collectionEqualsMethod = project.Module.FindMethod( collectionHelperTypeDef, "Equals", declaration => declaration.IsStatic );
         }
         
         public void AddEqualsTo( TypeDefDeclaration enhancedType, StructuralEqualityAttribute config,
@@ -80,7 +85,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                     writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
                 }
                 
-                var fields = this.GetFieldsForComparison( enhancedType, ignoredFields );
+                var fields = GetFieldsForComparison( enhancedType, ignoredFields );
                 
                 foreach ( var field in fields )
                 {
@@ -192,22 +197,21 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             FieldDefDeclaration field )
         {
             ITypeSignature fieldType = field.FieldType;
-            // TODO: Collections.
-            // var isCollection = fieldType.IsCollection();
+            var isCollection = fieldType.IsCollection() || fieldType is ArrayTypeSignature;
             
             if ( (fieldType.GetNakedType() is IntrinsicTypeSignature || fieldType.IsEnum() ) )
             {
                 this.EmitSimpleValueCheck( writer, methodBody, field );
             }
-            // else if (!isCollection || fieldType.IsGenericDefinition)
+            // TODO: generics?
+            else if (isCollection)
+            {
+                this.EmitCollectionCheck( writer, methodBody, field );
+            }
             else
             {
                 this.EmitNormalCheck( writer, methodBody, field );
             }
-            // else
-            // {
-            //     this.EmitCollectionCheck( writer, methodBody, field, collectionEqualsMethod );
-            // }
         }
 
         private void InjectReferenceEquals( InstructionWriter writer, CreatedEmptyMethod methodBody, TypeDefDeclaration enhancedType )
@@ -281,57 +285,30 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
         }
 
-        private void EmitCollectionCheck( InstructionWriter writer, CreatedEmptyMethod methodBody,
-            FieldDefDeclaration field, IMethod collectionEqualsMethod )
-        {
-            InstructionSequence collectionEqualsSequence = methodBody.PrincipalBlock.AddInstructionSequence();
-            
-            if ( field.FieldType.IsValueType() )
-            {
-                this.EmitCollectionEqualsCall( writer, methodBody, field, collectionEqualsMethod );
-                return;
-            }
-
-            // Check for null == null.
-            writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
-            writer.EmitInstruction( OpCodeNumber.Ldnull );
-            writer.EmitInstruction( OpCodeNumber.Ceq );
-            writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, collectionEqualsSequence );
-            
-            writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-            writer.EmitInstruction( OpCodeNumber.Ldnull );
-            writer.EmitInstruction( OpCodeNumber.Ceq );
-            writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
-            
-            writer.EmitInstruction( OpCodeNumber.Ldc_I4_1 );
-            writer.EmitBranchingInstruction( OpCodeNumber.Br, methodBody.ReturnSequence );
-            writer.DetachInstructionSequence();
-            
-            writer.AttachInstructionSequence( collectionEqualsSequence );
-            this.EmitCollectionEqualsCall( writer, methodBody, field, collectionEqualsMethod );
-        }
-
-        private void EmitCollectionEqualsCall( InstructionWriter writer, CreatedEmptyMethod methodBody,
-            FieldDefDeclaration field, IMethod collectionEqualsMethod )
+        private void EmitCollectionCheck( InstructionWriter writer, CreatedEmptyMethod methodBody, IField field )
         {
             void EmitLoadArgument( OpCodeNumber ldarg )
             {
                 writer.EmitInstruction( ldarg );
-                // TODO: Array.
-                if ( field.FieldType.IsValueType() )
-                {
-                    writer.EmitInstructionType( OpCodeNumber.Box, field.FieldType );
-                }
+                writer.EmitInstructionField( OpCodeNumber.Ldfld, field );
+                // TODO: boxing.
+                // if ( field.FieldType.IsValueType() && !(field.FieldType is ArrayTypeSignature) )
+                // {
+                //     writer.EmitInstructionType( OpCodeNumber.Box, field.FieldType );
+                // }
             }
-
+            
             EmitLoadArgument( OpCodeNumber.Ldarg_0 );
             EmitLoadArgument( OpCodeNumber.Ldarg_1 );
             
-            writer.EmitInstructionMethod( OpCodeNumber.Call, collectionEqualsMethod );
+            writer.EmitInstructionMethod( OpCodeNumber.Call, this.collectionEqualsMethod );
+            
+            // Collections don't match, return false.
+            writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
         }
 
-        private IEnumerable<FieldDefDeclaration> GetFieldsForComparison( TypeDefDeclaration enhancedType,
-            ISet<FieldDefDeclaration> ignoredFields )
+        private static IEnumerable<FieldDefDeclaration> GetFieldsForComparison( TypeDefDeclaration enhancedType,
+            ICollection<FieldDefDeclaration> ignoredFields )
         {
             foreach ( FieldDefDeclaration field in enhancedType.Fields )
             {

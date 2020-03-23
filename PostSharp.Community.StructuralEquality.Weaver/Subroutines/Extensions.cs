@@ -1,3 +1,4 @@
+using System.Collections;
 using PostSharp.Sdk.CodeModel;
 
 namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
@@ -6,9 +7,9 @@ namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
     {
         public static bool IsCollection(this ITypeSignature type)
         {
-            return false;
-            // !type..Equals("String") &&
-            //        type.Interfaces.Any(i => i.InterfaceType.Name.Equals("IEnumerable"));
+            var stringType = type.Module.Cache.GetIntrinsic( IntrinsicType.String );
+            var iEnumerableType = type.Module.Cache.GetType( typeof(IEnumerable) );
+            return !type.IsAssignableTo( stringType ) && type.IsAssignableTo( iEnumerableType );
         }
     }
 }

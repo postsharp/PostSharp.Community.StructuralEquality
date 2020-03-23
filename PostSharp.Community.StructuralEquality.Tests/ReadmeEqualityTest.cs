@@ -22,7 +22,7 @@ namespace PostSharp.Community.StructuralEquality.Tests
         }
     }
     
-    [StructuralEquality]
+    [StructuralEquality(DoNotAddEqualityOperators = true)]
     public class EnhancedIntegerHolder
     {
         public int X { get; }

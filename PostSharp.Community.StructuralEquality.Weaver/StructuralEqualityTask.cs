@@ -32,6 +32,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
             HashCodeInjection hashCodeInjection = new HashCodeInjection(this.Project);
             EqualsInjection equalsInjection = new EqualsInjection(this.Project);
+            OperatorInjection operatorInjection = new OperatorInjection(this.Project);
 
             foreach (EqualsType enhancedTypeData in toEnhance)
             {
@@ -40,6 +41,11 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 if (!config.DoNotAddEquals)
                 {
                     equalsInjection.AddEqualsTo(enhancedType, config, ignoredFields );
+                }
+
+                if ( !config.DoNotAddEqualityOperators )
+                {
+                    operatorInjection.ProcessEqualityOperators( enhancedType, config );
                 }
 
                 if (!config.DoNotAddGetHashCode)

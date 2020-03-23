@@ -19,6 +19,9 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             equality.TypeCheck =
                 (TypeCheck) ( namedArguments[nameof(StructuralEqualityAttribute.TypeCheck)]?.Value.Value ??
                               TypeCheck.ExactlyTheSameTypeAsThis );
+            equality.DoNotAddEqualityOperators =
+                (bool) ( namedArguments[nameof(StructuralEqualityAttribute.DoNotAddEqualityOperators)]?.Value.Value ??
+                         false );
             return equality;
         }
     }

@@ -29,7 +29,7 @@ namespace PostSharp.Community.StructuralEquality.Tests
         }
     }
 
-    [StructuralEquality]
+    [StructuralEquality(DoNotAddEqualityOperators = true)]
     public class EnhancedCase
     {
         public int a;

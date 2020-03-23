@@ -37,5 +37,10 @@ namespace PostSharp.Community.StructuralEquality
         /// If true, <c>base.Equals()</c> is not called in the generated <c>Equals</c> method.
         /// </summary>
         public bool IgnoreBaseClass { get; set; }
+
+        /// <summary>
+        /// If true, equality operators are neither checked nor replaced.
+        /// </summary>
+        public bool DoNotAddEqualityOperators { get; set; }
     }
 }

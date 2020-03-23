@@ -54,7 +54,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private MethodDefDeclaration InjectEqualsType( TypeDefDeclaration enhancedType,
             StructuralEqualityAttribute config, ICollection<FieldDefDeclaration> ignoredFields )
         {
-            // public virtual bool Equals( Base other )
+            // public virtual bool Equals( Typed other )
             var equalsDeclaration = new MethodDefDeclaration
             {
                 Name = "Equals",
@@ -98,28 +98,8 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                     this.EmitEqualsField( writer, methodBody, field );
                 }
                 
-                // Custom equality methods.
-                foreach (var customEqualsMethod in enhancedType.Methods)
-                {
-                    if (customEqualsMethod.CustomAttributes.GetOneByType(
-                            "PostSharp.Community.StructuralEquality.AdditionalEqualsMethodAttribute") != null)
-                    {
-                        if ( customEqualsMethod.IsStatic ||
-                             !customEqualsMethod.ReturnParameter.ParameterType.IsIntrinsic( IntrinsicType.Boolean ) ||
-                             customEqualsMethod.Parameters.Count != 1 ||
-                             !customEqualsMethod.Parameters[0].ParameterType.GetTypeDefinition().Equals( enhancedType )
-                        )
-                        {
-                            CustomMethodSignatureError();
-                        }
+                InjectCustomMethods( enhancedType, writer, methodBody );
 
-                        writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
-                        writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-                        writer.EmitInstructionMethod( OpCodeNumber.Call, customEqualsMethod );
-                        writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
-                    }
-                }
-                
                 // return true;
                 writer.EmitInstruction( OpCodeNumber.Ldc_I4_1 );
                 writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, methodBody.ReturnVariable );
@@ -128,6 +108,32 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             }
 
             return equalsDeclaration;
+        }
+
+        private static void InjectCustomMethods( TypeDefDeclaration enhancedType, InstructionWriter writer,
+            CreatedEmptyMethod methodBody )
+        {
+            // Custom equality methods.
+            foreach ( var customEqualsMethod in enhancedType.Methods )
+            {
+                if ( customEqualsMethod.CustomAttributes.GetOneByType(
+                         "PostSharp.Community.StructuralEquality.AdditionalEqualsMethodAttribute" ) != null )
+                {
+                    if ( customEqualsMethod.IsStatic ||
+                         !customEqualsMethod.ReturnParameter.ParameterType.IsIntrinsic( IntrinsicType.Boolean ) ||
+                         customEqualsMethod.Parameters.Count != 1 ||
+                         !customEqualsMethod.Parameters[0].ParameterType.GetTypeDefinition().Equals( enhancedType )
+                    )
+                    {
+                        CustomMethodSignatureError();
+                    }
+
+                    writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
+                    writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
+                    writer.EmitInstructionMethod( OpCodeNumber.Call, customEqualsMethod );
+                    writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
+                }
+            }
         }
 
         private static void CustomMethodSignatureError()

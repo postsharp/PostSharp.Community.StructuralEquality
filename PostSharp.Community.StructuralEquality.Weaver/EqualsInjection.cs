@@ -81,11 +81,12 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
                 if ( !config.IgnoreBaseClass && !enhancedType.IsValueType() && enhancedType.BaseTypeDef != this.objectTypeDef )
                 {
-                    var baseEqualsMethod = this.instanceEqualsMethod.FindOverride( enhancedType.BaseTypeDef, true ).Method;
-                    
+                    var baseEqualsMethod = this.instanceEqualsMethod.FindOverride( enhancedType.BaseTypeDef, true )
+                        .GetInstance( enhancedType.Module, enhancedType.BaseType.GetGenericContext() );
+
                     writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
                     writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-                    writer.EmitInstructionMethod( OpCodeNumber.Call, baseEqualsMethod.Translate( enhancedType.Module ) );
+                    writer.EmitInstructionMethod( OpCodeNumber.Call, baseEqualsMethod );
                     
                     // base.Equals(other) returned false.
                     writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
@@ -203,11 +204,13 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 
                 // Types are different, return false.
                 writer.EmitBranchingInstruction( OpCodeNumber.Brfalse, methodBody.ReturnSequence );
+
+                var canonicalType = enhancedType.GetCanonicalGenericInstance();
                 
                 // Go to typed check.
                 writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
                 writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-                writer.EmitInstructionType( OpCodeNumber.Castclass, enhancedType );
+                writer.EmitInstructionType( OpCodeNumber.Castclass, canonicalType );
                 
                 writer.EmitInstructionMethod( OpCodeNumber.Call, typedEqualsMethod );
                 
@@ -269,7 +272,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             {
                 this.EmitSimpleValueCheck( writer, methodBody, field );
             }
-            // TODO: generics?
             else if (isCollection)
             {
                 this.EmitCollectionCheck( writer, methodBody, field );
@@ -325,8 +327,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             {
                 writer.EmitInstruction( ldarg );
                 writer.EmitInstructionField( OpCodeNumber.Ldfld, field );
-                // TODO: FieldType is a value type or a generic parameter.
-                if ( field.FieldType is GenericParameterTypeSignature || field.FieldType.IsValueType() )
+                if ( !(field.FieldType is GenericParameterTypeSignature) && field.FieldType.IsValueType() )
                 {
                     writer.EmitInstructionType( OpCodeNumber.Box, canonicalType );
                 }
@@ -357,11 +358,10 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             {
                 writer.EmitInstruction( ldarg );
                 writer.EmitInstructionField( OpCodeNumber.Ldfld, field );
-                // TODO: boxing.
-                // if ( field.FieldType.IsValueType() && !(field.FieldType is ArrayTypeSignature) )
-                // {
-                //     writer.EmitInstructionType( OpCodeNumber.Box, field.FieldType );
-                // }
+                if ( field.FieldType.IsValueType() )
+                {
+                    writer.EmitInstructionType( OpCodeNumber.Box, field.FieldType );
+                }
             }
             
             EmitLoadArgument( OpCodeNumber.Ldarg_0 );

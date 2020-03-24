@@ -127,11 +127,11 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
         [InlineData("ExactlyTheSameTypeAsThisClass", "ExactlyTheSameTypeAsThisSubClass", false)]
         [InlineData("ExactlyTheSameTypeAsThisSubClass", "ExactlyTheSameTypeAsThisClass", false)]
         
-        [InlineData("EqualsOrSubtypeStruct", "EqualsOrSubtypeStruct", true)]
+        [InlineData("SameTypeOrSubtypeStruct", "SameTypeOrSubtypeStruct", true)]
         [InlineData("ExactlyOfTypeStruct", "ExactlyOfTypeStruct", true)]
         [InlineData("ExactlyTheSameTypeAsThisStruct", "ExactlyTheSameTypeAsThisStruct", true)]
-        [InlineData("EqualsOrSubtypeStruct", "ExactlyOfTypeStruct", false)]
-        [InlineData("ExactlyOfTypeStruct", "EqualsOrSubtypeStruct", false)]
+        [InlineData("SameTypeOrSubtypeStruct", "ExactlyOfTypeStruct", false)]
+        [InlineData("ExactlyOfTypeStruct", "SameTypeOrSubtypeStruct", false)]
         [InlineData("ExactlyTheSameTypeAsThisStruct", "ExactlyOfTypeStruct", false)]
         //TODO: support sub classes
         //[InlineData("ExactlyTheSameTypeAsThisSubClass", "ExactlyTheSameTypeAsThisSubClass", true)]

@@ -11,7 +11,7 @@ using PostSharp.Sdk.Extensibility;
 namespace PostSharp.Community.StructuralEquality.Weaver
 {
     /// <summary>
-    /// Adds IEquatable<T> and implements equality methods.
+    /// Adds IEquatable&lt;T&gt; and implements equality methods.
     /// </summary>
     public class EqualsInjection
     {
@@ -162,7 +162,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private void InjectEqualsObject( TypeDefDeclaration enhancedType, StructuralEqualityAttribute config,
             MethodDefDeclaration typedEqualsMethod )
         {
-            // public virtual bool Equals( Base other )
+            // public virtual bool Equals( object other )
             var equalsDeclaration = new MethodDefDeclaration
             {
                 Name = "Equals",

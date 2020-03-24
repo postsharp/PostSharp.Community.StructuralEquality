@@ -26,7 +26,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         {
             var operatorMethod = GetOperatorMethod( enhancedType, operatorName );
 
-            string operatorExample = $"public static bool operator {operatorSourceName}(T left, T right) => Operator.Weave(left, right);";
+            string operatorExample = $"public static bool operator {operatorSourceName}({enhancedType.Name} left, {enhancedType.Name} right) => Operator.Weave(left, right);";
             
             if ( operatorMethod == null )
             {

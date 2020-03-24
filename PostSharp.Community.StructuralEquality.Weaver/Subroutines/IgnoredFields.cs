@@ -28,24 +28,10 @@ namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
                 }
                 else if (targetElement is PropertyDeclaration propertyDeclaration)
                 {
-                    while ( true )
+                    FieldDefDeclaration backingField = compilerAdapterService.GetBackingField(propertyDeclaration);
+                    if ( backingField != null )
                     {
-                        FieldDefDeclaration backingField = compilerAdapterService.GetBackingField(propertyDeclaration);
-                        if ( backingField != null )
-                        {
-                            fields.Add( backingField );
-                        }
-
-                        if ( !propertyDeclaration.Getter.IsVirtual )
-                        {
-                            break;
-                        }
-                        
-                        propertyDeclaration = propertyDeclaration.Parent.BaseTypeDef.FindProperty( propertyDeclaration.Name )?.Property;
-                        if ( propertyDeclaration == null )
-                        {
-                            break;
-                        }
+                        fields.Add( backingField );
                     }
                 }
             }

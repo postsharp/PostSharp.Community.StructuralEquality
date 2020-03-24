@@ -5,9 +5,6 @@ using System.Reflection;
 using PostSharp.Community.StructuralEquality.Weaver.Subroutines;
 using PostSharp.Extensibility;
 using PostSharp.Sdk.CodeModel;
-using PostSharp.Sdk.CodeModel.Helpers;
-using PostSharp.Sdk.CodeModel.TypeSignatures;
-using PostSharp.Sdk.Collections;
 using PostSharp.Sdk.Extensibility;
 using PostSharp.Sdk.Extensibility.Compilers;
 using PostSharp.Sdk.Extensibility.Configuration;
@@ -39,19 +36,27 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             {
                 var enhancedType = enhancedTypeData.EnhancedType;
                 var config = enhancedTypeData.Config;
-                if (!config.DoNotAddEquals)
+                try
                 {
-                    equalsInjection.AddEqualsTo(enhancedType, config, ignoredFields );
-                }
+                    if ( !config.DoNotAddEquals )
+                    {
+                        equalsInjection.AddEqualsTo( enhancedType, config, ignoredFields );
+                    }
 
-                if ( !config.DoNotAddEqualityOperators )
-                {
-                    operatorInjection.ProcessEqualityOperators( enhancedType, config );
-                }
+                    if ( !config.DoNotAddEqualityOperators )
+                    {
+                        operatorInjection.ProcessEqualityOperators( enhancedType, config );
+                    }
 
-                if (!config.DoNotAddGetHashCode)
+                    if ( !config.DoNotAddGetHashCode )
+                    {
+                        hashCodeInjection.AddGetHashCodeTo( enhancedType, config, ignoredFields );
+                    }
+                }
+                catch ( InjectionException exception )
                 {
-                    hashCodeInjection.AddGetHashCodeTo(enhancedType, config, ignoredFields);
+                    Message.Write( enhancedType, SeverityType.Error, exception.ErrorCode, exception.Message );
+                    return false;
                 }
             }
 
@@ -63,38 +68,38 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         /// derived classes. This way, when Equals for a derived class is being created, you can be already sure that
         /// the Equals for the base class was already created (if the base class was target of [StructuralEquality].
         /// </summary>
-        private LinkedList<EqualsType> GetTypesToEnhance()
+        private List<EqualsType> GetTypesToEnhance()
         {
             IEnumerator<IAnnotationInstance> annotationsOfType =
                 annotationRepositoryService.GetAnnotationsOfType(typeof(StructuralEqualityAttribute), false, false);
-            LinkedList<EqualsType> toEnhance = new LinkedList<EqualsType>();
 
+            List<EqualsType> toEnhance = new List<EqualsType>();
+            
             while (annotationsOfType.MoveNext())
             {
                 IAnnotationInstance annotation = annotationsOfType.Current;
-                if (annotation.TargetElement is TypeDefDeclaration enhancedType)
+                if (annotation?.TargetElement is TypeDefDeclaration enhancedType)
                 {
-                    TypeDefDeclaration baseClass = enhancedType.BaseTypeDef;
                     StructuralEqualityAttribute config = EqualityConfiguration.ExtractFrom(annotation.Value);
-                    LinkedListNode<EqualsType> node = toEnhance.First;
                     EqualsType newType = new EqualsType(enhancedType, config);
-                    while (node != null)
-                    {
-                        if (node.Value.EnhancedType == baseClass)
-                        {
-                            toEnhance.AddAfter(node, newType);
-                            break;
-                        }
-
-                        node = node.Next;
-                    }
-
-                    if (node == null)
-                    {
-                        toEnhance.AddFirst(newType);
-                    }
+                    toEnhance.Add( newType );
                 }
             }
+            
+            toEnhance.Sort( ( first, second ) =>
+            {
+                if ( first.EnhancedType.IsAssignableTo( second.EnhancedType ) )
+                {
+                    if ( second.EnhancedType.IsAssignableTo( first.EnhancedType ) )
+                    {
+                        return 0;
+                    }
+
+                    return 1;
+                }
+                
+                return -1;
+            });
 
             return toEnhance;
         }

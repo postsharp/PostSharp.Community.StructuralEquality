@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using PostSharp.Community.StructuralEquality.Weaver.Subroutines;
+using PostSharp.Extensibility;
 using PostSharp.Sdk.CodeModel;
 using PostSharp.Sdk.CodeModel.Helpers;
 using PostSharp.Sdk.CodeModel.TypeSignatures;
@@ -84,9 +85,10 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             using ( var writer = InstructionWriter.GetInstance() )
             {
                 var methodBody = MethodBodyCreator.CreateModifiableMethodBody( writer, equalsDeclaration );
-                InstructionSequence instructionSequence = methodBody.PrincipalBlock.AddInstructionSequence();
-                instructionSequence.Comment = "Equals(Typed other)";
-                writer.AttachInstructionSequence( instructionSequence );
+                writer.AttachInstructionSequence( methodBody.PrincipalBlock.AddInstructionSequence() );
+                
+                writer.EmitInstruction( OpCodeNumber.Ldc_I4_0 );
+                writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, methodBody.ReturnVariable );
 
                 this.InjectReferenceEquals( writer, methodBody, enhancedType );
                 // Writer is either attached to the same sequence (value types) or to a new one which should check the structure.
@@ -142,7 +144,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                          !customEqualsMethod.Parameters[0].ParameterType.GetTypeDefinition().Equals( enhancedType )
                     )
                     {
-                        CustomMethodSignatureError();
+                        CustomMethodSignatureError(enhancedType, customEqualsMethod);
                     }
 
                     writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
@@ -153,10 +155,11 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             }
         }
 
-        private static void CustomMethodSignatureError()
+        private static void CustomMethodSignatureError(TypeDefDeclaration enhancedType, MethodDefDeclaration method)
         {
-            throw new Exception(
-                "Method marked with [CustomEqualsInternal] must be public, instance, must return bool and accept 1 parameter of the same type as the declaring type" );
+            string message =
+                $"Method {method.Name} marked with [CustomEqualsInternal] must be public, instance, must return bool and accept 1 parameter of the same type as the declaring type {enhancedType.Name}";
+            throw new InjectionException( "EQU3", message );
         }
 
         private void InjectEqualsObject( TypeDefDeclaration enhancedType, StructuralEqualityAttribute config,
@@ -179,6 +182,9 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 var methodBody = MethodBodyCreator.CreateModifiableMethodBody( writer, equalsDeclaration );
 
                 writer.AttachInstructionSequence( methodBody.PrincipalBlock.AddInstructionSequence() );
+                
+                writer.EmitInstruction( OpCodeNumber.Ldc_I4_0 );
+                writer.EmitInstructionLocalVariable( OpCodeNumber.Stloc, methodBody.ReturnVariable );
 
                 this.InjectReferenceEquals( writer, methodBody, enhancedType );
 
@@ -207,13 +213,13 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                     this.InjectExactlyTheSameTypeAsThis( writer, enhancedType, genericTypeInstance );
                     break;
                 case TypeCheck.ExactlyOfType:
-                    this.InjectExactlyOfType( writer, enhancedType, genericTypeInstance );
+                    this.InjectExactlyOfType( writer, genericTypeInstance );
                     break;
                 case TypeCheck.SameTypeOrSubtype:
-                    this.InjectSameTypeOrSubtype( writer, enhancedType );
+                    this.InjectSameTypeOrSubtype( writer, genericTypeInstance );
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new InjectionException( "EQU4", $"Unknown TypeCheck value: {config.TypeCheck}" );
             }
 
             // Types are different, return false.
@@ -246,7 +252,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             writer.EmitBranchingInstruction( OpCodeNumber.Br, methodBody.ReturnSequence );
         }
 
-        private void InjectExactlyTheSameTypeAsThis( InstructionWriter writer, TypeDefDeclaration enhancedType, IType genericTypeInstance )
+        private void InjectExactlyTheSameTypeAsThis( InstructionWriter writer, ITypeSignature enhancedType, ITypeSignature genericTypeInstance )
         {
             writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
             if ( enhancedType.IsValueType() )
@@ -263,21 +269,21 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             writer.EmitInstruction( OpCodeNumber.Ceq );
         }
 
-        private void InjectExactlyOfType( InstructionWriter writer, TypeDefDeclaration enhancedType, IType genericTypeInstance )
+        private void InjectExactlyOfType( InstructionWriter writer, ITypeSignature genericTypeInstance )
         {
             writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
             writer.EmitInstructionMethod( OpCodeNumber.Call, this.getTypeMethod );
 
-            writer.EmitInstructionType( OpCodeNumber.Ldtoken, enhancedType );
+            writer.EmitInstructionType( OpCodeNumber.Ldtoken, genericTypeInstance );
             writer.EmitInstructionMethod( OpCodeNumber.Call, this.getTypeFromHandleMethod );
 
             writer.EmitInstruction( OpCodeNumber.Ceq );
         }
 
-        private void InjectSameTypeOrSubtype( InstructionWriter writer, TypeDefDeclaration enhancedType )
+        private void InjectSameTypeOrSubtype( InstructionWriter writer, ITypeSignature genericTypeInstance )
         {
             writer.EmitInstruction( OpCodeNumber.Ldarg_1 );
-            writer.EmitInstructionType( OpCodeNumber.Isinst, enhancedType );
+            writer.EmitInstructionType( OpCodeNumber.Isinst, genericTypeInstance );
         }
 
         private void EmitEqualsField( InstructionWriter writer, CreatedEmptyMethod methodBody,
@@ -343,10 +349,11 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             void EmitLoadArgument( OpCodeNumber argument )
             {
                 writer.EmitInstruction( argument );
-                writer.EmitInstructionField( OpCodeNumber.Ldfld, field );
+                IField genericInstance = field.GetCanonicalGenericInstance();
+                writer.EmitInstructionField( OpCodeNumber.Ldfld, genericInstance );
                 if ( field.FieldType is GenericParameterTypeSignature || field.FieldType.IsValueType() )
                 {
-                    writer.EmitInstructionType( OpCodeNumber.Box, field.GetCanonicalGenericInstance().FieldType );
+                    writer.EmitInstructionType( OpCodeNumber.Box, genericInstance.FieldType );
                 }
             }
 
@@ -403,6 +410,16 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
                 yield return field;
             }
+        }
+    }
+
+    internal class InjectionException : Exception
+    {
+        public string ErrorCode { get; }
+
+        public InjectionException( string errorCode, string message ) : base( message )
+        {
+            this.ErrorCode = errorCode;
         }
     }
 }

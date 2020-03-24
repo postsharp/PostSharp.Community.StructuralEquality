@@ -147,7 +147,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
             if (!customMethod.ReturnParameter.ParameterType.IsIntrinsic(IntrinsicType.Int32))
             {
-                Message.Write(enhancedType, SeverityType.Error, "EQU1", "The signature of a method annotated with ["
+                Message.Write(enhancedType, SeverityType.Error, "EQU2", "The signature of a method annotated with ["
                                                                         + nameof(AdditionalGetHashCodeMethodAttribute) +
                                                                         "] must be 'int MethodName()'. Its return type must be 'int'.");
                 writer.EmitInstruction(OpCodeNumber.Ldc_I4_0);

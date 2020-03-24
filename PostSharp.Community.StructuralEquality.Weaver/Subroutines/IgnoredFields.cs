@@ -29,9 +29,9 @@ namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
                 else if (targetElement is PropertyDeclaration propertyDeclaration)
                 {
                     FieldDefDeclaration backingField = compilerAdapterService.GetBackingField(propertyDeclaration);
-                    if (backingField != null)
+                    if ( backingField != null )
                     {
-                        fields.Add(backingField);
+                        fields.Add( backingField );
                     }
                 }
             }

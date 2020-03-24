@@ -24,12 +24,12 @@ namespace PostSharp.Community.StructuralEquality.Tests
         }
     }
 
-    [StructuralEquality(DoNotAddEquals = true)]
+    [StructuralEquality(DoNotAddEquals = true, DoNotAddEqualityOperators = true)]
     public class A
     {
         public int Property { get; set; }
     }
-    [StructuralEquality(DoNotAddGetHashCode = true)]
+    [StructuralEquality(DoNotAddGetHashCode = true, DoNotAddEqualityOperators = true)]
     public class B
     {
         public int Property { get; set; }

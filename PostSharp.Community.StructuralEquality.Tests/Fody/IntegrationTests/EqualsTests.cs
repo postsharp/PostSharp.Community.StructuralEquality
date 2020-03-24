@@ -101,6 +101,8 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
 
         bool CheckEqualityOnTypesForTypeCheck(string left, string right)
         {
+            left = "PostSharp.Community.StructuralEquality.Tests.Fody.AssemblyToProcess." + left;
+            right = "PostSharp.Community.StructuralEquality.Tests.Fody.AssemblyToProcess." + right;
             var leftType = this.GetType().Assembly.GetType(left);
             dynamic leftInstance = Activator.CreateInstance(leftType);
             leftInstance.A = 1;
@@ -118,12 +120,19 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
         [InlineData("EqualsOrSubtypeSubClass", "EqualsOrSubtypeClass", true)]
         [InlineData("EqualsOrSubtypeSubClass", "EqualsOrSubtypeSubClass", true)]
         [InlineData("ExactlyOfTypeClass", "ExactlyOfTypeClass", true)]
-        [InlineData("ExactlyOfTypeSubClass", "ExactlyOfTypeClass", false)]
-        [InlineData("ExactlyOfTypeClass", "ExactlyOfTypeSubClass", true)]
+        [InlineData("ExactlyOfTypeSubClass", "ExactlyOfTypeClass", true)]
+        [InlineData("ExactlyOfTypeClass", "ExactlyOfTypeSubClass", false)]
         [InlineData("ExactlyOfTypeSubClass", "ExactlyOfTypeSubClass", false)]
         [InlineData("ExactlyTheSameTypeAsThisClass", "ExactlyTheSameTypeAsThisClass", true)]
         [InlineData("ExactlyTheSameTypeAsThisClass", "ExactlyTheSameTypeAsThisSubClass", false)]
         [InlineData("ExactlyTheSameTypeAsThisSubClass", "ExactlyTheSameTypeAsThisClass", false)]
+        
+        [InlineData("SameTypeOrSubtypeStruct", "SameTypeOrSubtypeStruct", true)]
+        [InlineData("ExactlyOfTypeStruct", "ExactlyOfTypeStruct", true)]
+        [InlineData("ExactlyTheSameTypeAsThisStruct", "ExactlyTheSameTypeAsThisStruct", true)]
+        [InlineData("SameTypeOrSubtypeStruct", "ExactlyOfTypeStruct", false)]
+        [InlineData("ExactlyOfTypeStruct", "SameTypeOrSubtypeStruct", false)]
+        [InlineData("ExactlyTheSameTypeAsThisStruct", "ExactlyOfTypeStruct", false)]
         //TODO: support sub classes
         //[InlineData("ExactlyTheSameTypeAsThisSubClass", "ExactlyTheSameTypeAsThisSubClass", true)]
         public void Equals_should_use_type_check_option(string left, string right, bool result)

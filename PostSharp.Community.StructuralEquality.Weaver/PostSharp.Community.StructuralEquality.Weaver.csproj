@@ -14,11 +14,9 @@
       <!-- This package must be referenced by weaver assemblies, which are the assemblies that perform code
       modification. It doesn't need to be referenced by the client assemblies which contain attributes to be used
       by users of your add-in. -->
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\PostSharp.Community.StructuralEquality\PostSharp.Community.StructuralEquality.csproj" />
-    </ItemGroup>
-
-    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PostSharp.Community.StructuralEquality\PostSharp.Community.StructuralEquality.csproj" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 </Project>

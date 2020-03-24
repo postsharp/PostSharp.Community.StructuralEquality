@@ -40,5 +40,9 @@ namespace PostSharp.Community.StructuralEquality
         /// </summary>
         public bool IgnoreBaseClass { get; set; }
 
+        /// <summary>
+        /// If true, equality operators are neither checked nor replaced.
+        /// </summary>
+        public bool DoNotAddEqualityOperators { get; set; }
     }
 }

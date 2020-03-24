@@ -6,9 +6,13 @@
          [IgnoreDuringEquals]
          public int X { get; set; }
 
+         [IgnoreDuringEquals]
+         public bool CustomCalled { get; set; }
+
          [AdditionalEqualsMethod]
          bool CustomEqualsMethod(CustomEquals other)
          {
+             this.CustomCalled = true;
              return X == 1 && other.X == 2 || X == 2 && other.X == 1;
          }
 

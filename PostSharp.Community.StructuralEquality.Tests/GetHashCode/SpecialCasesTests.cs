@@ -21,7 +21,7 @@ namespace PostSharp.Community.StructuralEquality.Tests.GetHashCode
             Assert.NotEqual(2, one.GetHashCode());
         }
 
-        [StructuralEquality]
+        [StructuralEquality(DoNotAddEqualityOperators = true)]
         public class Multi
         {
             public int H { get; } = 2;
@@ -39,7 +39,7 @@ namespace PostSharp.Community.StructuralEquality.Tests.GetHashCode
             }
         }
         
-        [StructuralEquality]
+        [StructuralEquality(DoNotAddEqualityOperators = true)]
         private class HashCodeAlreadyImplemented
         {
             private int aField = 21;

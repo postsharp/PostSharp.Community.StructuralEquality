@@ -17,6 +17,8 @@ namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
             equality.DoNotAddEquals = (bool)(namedArguments[nameof(StructuralEqualityAttribute.DoNotAddEquals)]?.Value.Value ?? false);
             equality.DoNotAddGetHashCode = (bool)(namedArguments[nameof(StructuralEqualityAttribute.DoNotAddGetHashCode)]?.Value.Value ?? false);
             equality.IgnoreBaseClass = (bool)(namedArguments[nameof(StructuralEqualityAttribute.IgnoreBaseClass)]?.Value.Value ?? false);
+            equality.TypeCheck = (TypeCheck)(namedArguments[nameof(StructuralEqualityAttribute.TypeCheck)]?.Value.Value ?? TypeCheck.ExactlyTheSameTypeAsThis);
+            equality.DoNotAddEqualityOperators = (bool) (namedArguments[nameof(StructuralEqualityAttribute.DoNotAddEqualityOperators)]?.Value.Value ?? false);
             return equality;
         }
     }

@@ -6,9 +6,13 @@
         [IgnoreDuringEquals]
         public T Prop { get; set; }
 
+        [IgnoreDuringEquals]
+        public bool CustomCalled { get; set; }
+
         [AdditionalEqualsMethod]
         bool CustomEquals(CustomGenericEquals<T> other)
         {
+            this.CustomCalled = true;
             return Equals(Prop, other.Prop);
         }
 

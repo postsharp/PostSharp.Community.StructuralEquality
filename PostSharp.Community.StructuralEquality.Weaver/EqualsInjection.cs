@@ -63,12 +63,29 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             var genericInstance = this.equatableInterface.GetTypeDefinition().GetGenericInstance( new GenericMap(
                 enhancedType.Module,
                 new[] {enhancedType.GetCanonicalGenericInstance()} ) );
-            enhancedType.InterfaceImplementations.Add( genericInstance.TranslateType( enhancedType.Module ) );
+            ITypeSignature interfaceRef = genericInstance.TranslateType( enhancedType.Module );
+
+            enhancedType.InterfaceImplementations.Add( interfaceRef );
         }
 
         private MethodDefDeclaration InjectEqualsType( TypeDefDeclaration enhancedType,
             StructuralEqualityAttribute config, ICollection<FieldDefDeclaration> ignoredFields )
         {
+            IType genericTypeInstance = enhancedType.GetCanonicalGenericInstance();
+
+            var existingMethod = enhancedType.Methods.FirstOrDefault<IMethod>( declaration =>
+            {
+                return declaration.IsPublic() &&
+                       !declaration.IsStatic &&
+                       declaration.ParameterCount == 1 &&
+                       declaration.GetParameterType( 0 ).Equals( genericTypeInstance );
+            } );
+
+            if ( existingMethod != null )
+            {
+                return existingMethod.GetMethodDefinition();
+            }
+            
             // public virtual bool Equals( Typed other )
             var equalsDeclaration = new MethodDefDeclaration
             {
@@ -77,8 +94,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 CallingConvention = CallingConvention.HasThis
             };
             enhancedType.Methods.Add( equalsDeclaration );
-            equalsDeclaration.Parameters.Add( new ParameterDeclaration( 0, "other",
-                enhancedType.GetCanonicalGenericInstance() ) );
+            equalsDeclaration.Parameters.Add( new ParameterDeclaration( 0, "other", genericTypeInstance ) );
             equalsDeclaration.ReturnParameter = ParameterDeclaration.CreateReturnParameter( this.booleanType );
             CompilerGeneratedAttributeHelper.AddCompilerGeneratedAttribute( equalsDeclaration );
 
@@ -94,7 +110,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 // Writer is either attached to the same sequence (value types) or to a new one which should check the structure.
 
                 // return base.Equals(other) && this.field1 == other.field1 && ...;
-                if ( !config.IgnoreBaseClass && !enhancedType.IsValueType() )
+                if ( !config.IgnoreBaseClass && enhancedType.IsValueTypeSafe() != true )
                 {
                     // Find the base method.
                     var baseEqualsMethod = this.instanceEqualsMethod.FindOverride( enhancedType.BaseTypeDef, true )
@@ -165,6 +181,19 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private void InjectEqualsObject( TypeDefDeclaration enhancedType, StructuralEqualityAttribute config,
             MethodDefDeclaration typedEqualsMethod )
         {
+            var existingMethod = enhancedType.Methods.FirstOrDefault<IMethod>( declaration =>
+            {
+                return declaration.IsPublic() &&
+                       !declaration.IsStatic &&
+                       declaration.ParameterCount == 1 &&
+                       declaration.GetParameterType( 0 ).Equals( this.objectType );
+            } );
+
+            if ( existingMethod != null )
+            {
+                return;
+            }
+            
             // public virtual bool Equals( object other )
             var equalsDeclaration = new MethodDefDeclaration
             {
@@ -191,7 +220,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 var genericTypeInstance = enhancedType.GetCanonicalGenericInstance();
 
                 this.EmitTypeCheck( enhancedType, config, writer, genericTypeInstance, methodBody );
-                if ( enhancedType.IsValueType() )
+                if ( enhancedType.IsValueTypeSafe() == true )
                 {
                     this.EmitEqualsObjectOfValueType( writer, genericTypeInstance, typedEqualsMethod, methodBody );
                 }
@@ -255,7 +284,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private void InjectExactlyTheSameTypeAsThis( InstructionWriter writer, ITypeSignature enhancedType, ITypeSignature genericTypeInstance )
         {
             writer.EmitInstruction( OpCodeNumber.Ldarg_0 );
-            if ( enhancedType.IsValueType() )
+            if ( enhancedType.IsValueTypeSafe() == true )
             {
                 writer.EmitInstructionType( OpCodeNumber.Ldobj, genericTypeInstance );
                 writer.EmitInstructionType( OpCodeNumber.Box, genericTypeInstance );
@@ -308,7 +337,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         private void InjectReferenceEquals( InstructionWriter writer, CreatedEmptyMethod methodBody,
             TypeDefDeclaration enhancedType )
         {
-            if ( enhancedType.IsValueType() )
+            if ( enhancedType.IsValueTypeSafe() == true )
             {
                 return;
             }
@@ -351,7 +380,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 writer.EmitInstruction( argument );
                 IField genericInstance = field.GetCanonicalGenericInstance();
                 writer.EmitInstructionField( OpCodeNumber.Ldfld, genericInstance );
-                if ( field.FieldType is GenericParameterTypeSignature || field.FieldType.IsValueType() )
+                if ( field.FieldType is GenericParameterTypeSignature || field.FieldType.IsValueTypeSafe() == true )
                 {
                     writer.EmitInstructionType( OpCodeNumber.Box, genericInstance.FieldType );
                 }
@@ -383,7 +412,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
             {
                 writer.EmitInstruction( argument );
                 writer.EmitInstructionField( OpCodeNumber.Ldfld, field );
-                if ( field.FieldType.IsValueType() )
+                if ( field.FieldType.IsValueTypeSafe() == true )
                 {
                     writer.EmitInstructionType( OpCodeNumber.Box, field.FieldType );
                 }

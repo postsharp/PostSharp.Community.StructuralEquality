@@ -183,7 +183,8 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         {
             var existingMethod = enhancedType.Methods.FirstOrDefault<IMethod>( declaration =>
             {
-                return declaration.IsPublic() &&
+                return declaration.Name == "Equals" &&
+                       declaration.IsPublic() &&
                        !declaration.IsStatic &&
                        declaration.ParameterCount == 1 &&
                        declaration.GetParameterType( 0 ).Equals( this.objectType );

@@ -16,6 +16,10 @@ namespace PostSharp.Community.StructuralEquality.Tests
         {
             return Math.Abs(this.DoNotUse - other.DoNotUse) < 0.1f;
         }
+        
+        public static bool operator ==(AdvancedCase left, AdvancedCase right) => Operator.Weave(left, right);
+        public static bool operator !=(AdvancedCase left, AdvancedCase right) => Operator.Weave(left, right);
+
     }
 
     [StructuralEquality(DoNotAddEqualityOperators = true, DoNotAddGetHashCode = true)]

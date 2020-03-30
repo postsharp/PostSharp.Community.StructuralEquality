@@ -43,7 +43,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         public void AddGetHashCodeTo(TypeDefDeclaration enhancedType, StructuralEqualityAttribute config,
             ISet<FieldDefDeclaration> ignoredFields)
         {
-            // TODO run test coverage
             if (enhancedType.Methods.Any<IMethod>(m => m.Name == "GetHashCode" &&
                                                        m.ParameterCount == 0))
             {

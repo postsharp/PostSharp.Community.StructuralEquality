@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Generic;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedType.Global
+// ReSharper disable MemberCanBePrivate.Global
+#pragma warning disable 169
 
 namespace PostSharp.Community.StructuralEquality.Tests
 {
-    [StructuralEquality(StringComparisonStyle = StringComparison.CurrentCultureIgnoreCase, TypeCheck = TypeCheck.ExactlyTheSameTypeAsThis)]
+    [StructuralEquality(TypeCheck = TypeCheck.ExactlyTheSameTypeAsThis)]
     public class AdvancedCase : AdvancedBaseClass
     {
         protected string field;

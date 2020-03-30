@@ -62,7 +62,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         {
             var genericInstance = this.equatableInterface.GetTypeDefinition().GetGenericInstance( new GenericMap(
                 enhancedType.Module,
-                new[] {enhancedType.GetCanonicalGenericInstance()} ) );
+                new ITypeSignature[] {enhancedType.GetCanonicalGenericInstance()} ) );
             ITypeSignature interfaceRef = genericInstance.TranslateType( enhancedType.Module );
 
             enhancedType.InterfaceImplementations.Add( interfaceRef );
@@ -75,7 +75,8 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
             var existingMethod = enhancedType.Methods.FirstOrDefault<IMethod>( declaration =>
             {
-                return declaration.IsPublic() &&
+                return declaration.Name == "Equals" &&
+                       declaration.IsPublic() &&
                        !declaration.IsStatic &&
                        declaration.ParameterCount == 1 &&
                        declaration.GetParameterType( 0 ).Equals( genericTypeInstance );
@@ -321,7 +322,10 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         {
             ITypeSignature fieldType = field.FieldType;
 
-            if ( ( fieldType.GetNakedType() is IntrinsicTypeSignature || fieldType.IsEnum() ) )
+            if ( ( fieldType.GetNakedType() is IntrinsicTypeSignature sig
+                   && sig.IntrinsicType != IntrinsicType.Object 
+                   && sig.IntrinsicType != IntrinsicType.String
+                  ) || fieldType.IsEnum() )
             {
                 this.EmitSimpleValueCheck( writer, methodBody, field );
             }
@@ -440,16 +444,6 @@ namespace PostSharp.Community.StructuralEquality.Weaver
 
                 yield return field;
             }
-        }
-    }
-
-    internal class InjectionException : Exception
-    {
-        public string ErrorCode { get; }
-
-        public InjectionException( string errorCode, string message ) : base( message )
-        {
-            this.ErrorCode = errorCode;
         }
     }
 }

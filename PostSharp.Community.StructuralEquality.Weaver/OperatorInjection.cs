@@ -26,11 +26,11 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         {
             var operatorMethod = GetOperatorMethod( enhancedType, operatorName );
 
-            string operatorExample = $"public static bool operator {operatorSourceName}({enhancedType.Name} left, {enhancedType.Name} right) => Operator.Weave(left, right);";
+            string operatorExample = $"public static bool operator {operatorSourceName}({enhancedType.ShortName} left, {enhancedType.ShortName} right) => Operator.Weave(left, right);";
             
             if ( operatorMethod == null )
             {
-                throw new Exception($"The equality operator was not found on type {enhancedType.Name}, implement it like this: {operatorExample}");
+                throw new InjectionException("EQU10", $"The equality operator was not found on type {enhancedType.Name}, implement it like this: {operatorExample}");
             }
 
             var operatorMethodDef = operatorMethod.GetMethodDefinition();
@@ -104,7 +104,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
         {
             if ( !operatorMethodDef.HasBody )
             {
-                throw new Exception( $"Type {operatorMethodDef.DeclaringType.Name} has an operator without a body, implement it like this: {operatorExample}" );
+                throw new InjectionException("EQU5", $"Type {operatorMethodDef.DeclaringType.Name} has an operator without a body, implement it like this: {operatorExample}" );
             }
 
             using ( var reader = operatorMethodDef.MethodBody.CreateInstructionReader() )
@@ -116,7 +116,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 {
                     if ( !reader.ReadInstruction() )
                     {
-                        throw new Exception(
+                        throw new InjectionException("EQU6",
                             $"Type {operatorMethodDef.DeclaringType.Name} has an operator with incorrect body, implement it like this: {operatorExample}" );
                     }
 
@@ -126,7 +126,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                              !reader.CurrentInstruction.MethodOperand.GetMethodDefinition()
                                  .Equals( this.weaveMethod.GetMethodDefinition() ) )
                         {
-                            throw new Exception(
+                            throw new InjectionException("EQU7",
                                 $"Type {operatorMethodDef.DeclaringType.Name} has an operator with incorrect body, implement it like this: {operatorExample}" );
                         }
                     }

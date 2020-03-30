@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using PostSharp.Community.StructuralEquality.Weaver.Subroutines;
 using PostSharp.Extensibility;
 using PostSharp.Sdk.CodeModel;
@@ -12,13 +13,15 @@ using PostSharp.Sdk.Extensibility.Tasks;
 
 namespace PostSharp.Community.StructuralEquality.Weaver
 {
-    [ExportTask(Phase = TaskPhase.Transform, TaskName = nameof(StructuralEqualityTask))] 
+    [ExportTask(Phase = TaskPhase.CustomTransform, TaskName = nameof(StructuralEqualityTask))] 
     [TaskDependency("AnnotationRepository", IsRequired = true, Position = DependencyPosition.Before)]
     public class StructuralEqualityTask : Task
     {
         [ImportService] 
         private IAnnotationRepositoryService annotationRepositoryService;
-        
+
+        public override string CopyrightNotice => "Rafał Jasica, Simon Cropp, PostSharp Technologies and contributors";
+
         public override bool Execute()
         {
             // Find ignored fields

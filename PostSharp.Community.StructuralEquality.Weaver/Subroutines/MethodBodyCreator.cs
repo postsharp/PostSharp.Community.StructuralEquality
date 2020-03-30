@@ -2,7 +2,7 @@ using PostSharp.Reflection;
 using PostSharp.Sdk.CodeModel;
 using PostSharp.Sdk.Utilities;
 
-namespace PostSharp.Community.StructuralEquality.Weaver
+namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
 {
     public static class MethodBodyCreator
     {

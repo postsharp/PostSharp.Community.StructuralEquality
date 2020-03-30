@@ -9,7 +9,7 @@ namespace PostSharp.Community.StructuralEquality
     public static class Operator
     {
         /// <summary>
-        /// Add the following code to a type annotated with [StructuralEquality] to auto-generate equality operators.
+        /// Add the following code to a type annotated with <c>[StructuralEquality]</c> to auto-generate equality operators.
         /// <code>
         /// public static bool operator ==(YourClass left, YourClass right) => Operator.Weave(left, right);
         /// public static bool operator !=(YourClass left, YourClass right) => Operator.Weave(left, right);

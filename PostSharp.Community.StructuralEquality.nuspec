@@ -16,7 +16,7 @@
     <tags>postsharp equals gethashcode equality ilweaving</tags>
     <dependencies>
       <group targetFramework=".NETStandard2.0">
-        <dependency id="PostSharp" version="6.6.1-preview" />
+        <dependency id="PostSharp" version="6.6.3-preview" />
       </group>
     </dependencies>
   </metadata>

@@ -18,6 +18,7 @@ namespace PostSharp.Community.StructuralEquality.Tests
         [Fact]
         public void TwoDogs()
         {
+            // This is here to avoid optimization, always returns "do".
             string d = (new Random().Next(0, 1) == 0 ? "do" : "");
             string f = "Fi" + d;
             Assert.Equal(new Dog() { Name = "Fido"}, new Dog() { Name = f });

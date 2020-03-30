@@ -39,5 +39,7 @@ namespace PostSharp.Community.StructuralEquality
                 return !leftHasNext && !rightHasNext;
             }
         }
+
+        // TODO: Have an implementation that supports ICollection because it's cheap, at run time, to compare the collection size first.
     }
 }

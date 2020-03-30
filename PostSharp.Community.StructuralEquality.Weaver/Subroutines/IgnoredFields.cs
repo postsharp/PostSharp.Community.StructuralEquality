@@ -33,6 +33,10 @@ namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
                     {
                         fields.Add( backingField );
                     }
+                    else
+                    {
+                        // TODO: Emit a warning because the annotation is added to an invalid property.
+                    }
                 }
             }
 

@@ -7,6 +7,8 @@
         <!-- PostSharp doesn't actually modify the weaver assembly, so we can save some time by disabling it here. -->
         <LangVersion>8</LangVersion>
         <NoWarn>CS0649</NoWarn>
+        <RootNamespace>PostSharp.Community.StructuralEquality.Weaver</RootNamespace>
+        <AssemblyName>PostSharp.Community.StructuralEquality.Weaver</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,8 +17,9 @@
       modification. It doesn't need to be referenced by the client assemblies which contain attributes to be used
       by users of your add-in. -->
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\PostSharp.Community.StructuralEquality\PostSharp.Community.StructuralEquality.csproj" />
-  </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Client\Client.csproj" />
+    </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 </Project>

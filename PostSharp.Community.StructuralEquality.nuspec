@@ -22,9 +22,9 @@
   </metadata>
 
   <files>
-    <file src="PostSharp.Community.StructuralEquality\bin\Release\netstandard2.0\PostSharp.Community.StructuralEquality.dll" target="lib\netstandard2.0"/>
-    <file src="PostSharp.Community.StructuralEquality\bin\Release\netstandard2.0\PostSharp.Community.StructuralEquality.xml" target="lib\netstandard2.0"/>
-    <file src="PostSharp.Community.StructuralEquality.Weaver\bin\Release\netstandard2.0\PostSharp.Community.StructuralEquality.Weaver.dll" target="tools"/>
+    <file src="Client\bin\Release\netstandard2.0\PostSharp.Community.StructuralEquality.dll" target="lib\netstandard2.0"/>
+    <file src="Client\bin\Release\netstandard2.0\PostSharp.Community.StructuralEquality.xml" target="lib\netstandard2.0"/>
+    <file src="Weaver\bin\Release\netstandard2.0\PostSharp.Community.StructuralEquality.Weaver.dll" target="tools"/>
     <file src="icon.png" target="" />
   </files>
 </package>

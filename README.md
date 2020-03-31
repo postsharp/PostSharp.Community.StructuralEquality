@@ -3,8 +3,10 @@ Add `[StructuralEquality]` to your classes to avoid writing `Equals` and `GetHas
 
 PostSharp synthesizes a member-by-member structural equality implementation of `Equals` and `GetHashCode` of annotated classes and adds those implementations directly to your assembly so they don't clutter your code.
 
-*This is an add-in for [PostSharp](https://postsharp.net). It modifies your assembly during compilation by using IL weaving. The add-in functionality is in preview, and not yet public. This add-in might not work and is unsupported.*
- 
+*This is an add-in for [PostSharp](https://postsharp.net). It modifies your assembly during compilation by using IL weaving.*
+
+![CI badge](https://github.com/postsharp/PostSharp.Community.StructuralEquality/workflows/Full%20Pipeline/badge.svg)
+
 #### Example
 Your code:
 ```csharp

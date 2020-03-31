@@ -33,6 +33,13 @@ namespace PostSharp.Community.StructuralEquality.Weaver.Subroutines
                     {
                         fields.Add( backingField );
                     }
+                    else
+                    {
+                        // The property is not an automatic property.
+                        // It's ignored, because there is no backing field and we make equality by fields.
+                        // We could emit a warning but I don't think that's a great idea. Like, yeah, ignoring a 
+                        // non-automatic property has no effect but so what: it's ignored, just like the user wanted.
+                    }
                 }
             }
 

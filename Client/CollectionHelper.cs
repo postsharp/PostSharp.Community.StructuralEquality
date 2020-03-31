@@ -24,6 +24,14 @@ namespace PostSharp.Community.StructuralEquality
                 return false;
             }
 
+            if (left is ICollection leftCollection && right is ICollection rightCollection)
+            {
+                if (leftCollection.Count != rightCollection.Count)
+                {
+                    return false;
+                }
+            }
+
             var leftEnumerator = left.GetEnumerator();
             var rightEnumerator = right.GetEnumerator();
             while ( true )

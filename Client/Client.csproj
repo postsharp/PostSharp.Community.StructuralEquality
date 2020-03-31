@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>PostSharp.Community.StructuralEquality</RootNamespace>
+    <AssemblyName>PostSharp.Community.StructuralEquality</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="PostSharp.Redist" Version="6.6.3-preview" />

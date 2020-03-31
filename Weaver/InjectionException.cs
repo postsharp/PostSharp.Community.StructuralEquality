@@ -2,8 +2,10 @@ using System;
 
 namespace PostSharp.Community.StructuralEquality.Weaver
 {
-    // TODO: Should be changed to Message.Write or AssertionFailedException, whether it's the user's fault or not.
-    
+    /// <summary> 
+    /// Exceptions of this class are caught and turned to <c>Message.Write()</c> calls so that they show up as error
+    /// messages.
+    /// </summary>
     internal class InjectionException : Exception
     {
         public string ErrorCode { get; }

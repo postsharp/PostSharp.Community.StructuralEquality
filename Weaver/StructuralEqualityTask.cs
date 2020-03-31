@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using PostSharp.Community.StructuralEquality.Weaver.Subroutines;
 using PostSharp.Extensibility;
+using PostSharp.Sdk.AspectInfrastructure;
 using PostSharp.Sdk.CodeModel;
 using PostSharp.Sdk.Extensibility;
 using PostSharp.Sdk.Extensibility.Compilers;
@@ -79,7 +80,8 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                 annotationRepositoryService.GetAnnotationsOfType(typeof(StructuralEqualityAttribute), false, false);
 
             // TODO: Change the List into a StructuredDeclarationDictionary, because then Visit takes the order of inheritance into
-            // account.
+            // account. But first we would need to make that public in PostSharp.Compiler.Engine.
+            
             List<EqualsType> toEnhance = new List<EqualsType>();
             
             while (annotationsOfType.MoveNext())
@@ -101,7 +103,7 @@ namespace PostSharp.Community.StructuralEquality.Weaver
                     {
                         return 0;
                     }
-
+            
                     return 1;
                 }
                 

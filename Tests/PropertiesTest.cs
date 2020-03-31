@@ -9,28 +9,28 @@ namespace PostSharp.Community.StructuralEquality.Tests
         [Fact]
         public void TestDoNotAddEquals()
         {
-            A a  = new A { Property = 2 };
-            A b  = new A { Property = 2 };
-            Assert.False(a.Equals(b));
-            Assert.Equal(a.GetHashCode(), b.GetHashCode());
+            PAA paa  = new PAA { Property = 2 };
+            PAA b  = new PAA { Property = 2 };
+            Assert.False(paa.Equals(b));
+            Assert.Equal(paa.GetHashCode(), b.GetHashCode());
         }
         [Fact]
         public void TestDoNotAddHashCode()
         {
-            B a  = new B { Property = 2 };
-            B b  = new B { Property = 2 };
-            Assert.True(a.Equals(b));
+            PBB a  = new PBB { Property = 2 };
+            PBB pbb  = new PBB { Property = 2 };
+            Assert.True(a.Equals(pbb));
             Assert.Equal(a.GetHashCode(), RuntimeHelpers.GetHashCode(a));
         }
     }
 
     [StructuralEquality(DoNotAddEquals = true, DoNotAddEqualityOperators = true)]
-    public class A
+    public class PAA
     {
         public int Property { get; set; }
     }
     [StructuralEquality(DoNotAddGetHashCode = true, DoNotAddEqualityOperators = true)]
-    public class B
+    public class PBB
     {
         public int Property { get; set; }
     }

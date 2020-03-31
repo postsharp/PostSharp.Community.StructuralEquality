@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net48</TargetFrameworks>
+        <TargetFramework>net48</TargetFramework>
         <IsPackable>false</IsPackable>
-        <PostSharpSearchPath>..\PostSharp.Community.StructuralEquality.Weaver\bin\$(Configuration)\netstandard2.0</PostSharpSearchPath>
+        <PostSharpSearchPath>..\Weaver\bin\$(Configuration)\netstandard2.0</PostSharpSearchPath>
         <RootNamespace>PostSharp.Community.StructuralEquality.Tests</RootNamespace>
 <!--        <PostSharpAttachDebugger>True</PostSharpAttachDebugger>-->
         <PostSharpHost>Native</PostSharpHost>
@@ -20,9 +20,9 @@
     <ItemGroup>
         <!-- We don't actually need to reference the weaver here, but we need the weaver assembly to exist in the folder
         on the PostSharp search path before our build, so this project reference ensures that the weaver builds before this project. -->
-      <ProjectReference Include="..\PostSharp.Community.StructuralEquality.Weaver\PostSharp.Community.StructuralEquality.Weaver.csproj" />
-      <ProjectReference Include="..\PostSharp.Community.StructuralEquality\PostSharp.Community.StructuralEquality.csproj" />
+      <ProjectReference Include="..\Client\Client.csproj" />
       <ProjectReference Include="..\ReferencedDependency\ReferencedDependency.csproj" />
+      <ProjectReference Include="..\Weaver\Weaver.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,10 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Community.StructuralEquality", "PostSharp.Community.StructuralEquality\PostSharp.Community.StructuralEquality.csproj", "{BB258B34-6F7E-4B34-8FB5-54BDCA8006D7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{BB258B34-6F7E-4B34-8FB5-54BDCA8006D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Community.StructuralEquality.Weaver", "PostSharp.Community.StructuralEquality.Weaver\PostSharp.Community.StructuralEquality.Weaver.csproj", "{E7C4CA26-F0FC-4FD8-B6AC-A996C5635C61}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Weaver", "Weaver\Weaver.csproj", "{E7C4CA26-F0FC-4FD8-B6AC-A996C5635C61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostSharp.Community.StructuralEquality.Tests", "PostSharp.Community.StructuralEquality.Tests\PostSharp.Community.StructuralEquality.Tests.csproj", "{F50CA89A-7A52-4934-B3FC-2FFB69813421}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{F50CA89A-7A52-4934-B3FC-2FFB69813421}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReferencedDependency", "ReferencedDependency\ReferencedDependency.csproj", "{5A978CC2-B79A-4E77-8B96-49C9EE419A71}"
 EndProject

@@ -103,7 +103,7 @@ namespace PostSharp.Community.StructuralEquality.Tests.Fody.IntegrationTests
         {
             left = "PostSharp.Community.StructuralEquality.Tests.Fody.AssemblyToProcess." + left;
             right = "PostSharp.Community.StructuralEquality.Tests.Fody.AssemblyToProcess." + right;
-            var leftType = this.GetType().Assembly.GetType(left);
+            Type leftType = this.GetType().Assembly.GetType(left);
             dynamic leftInstance = Activator.CreateInstance(leftType);
             leftInstance.A = 1;
 

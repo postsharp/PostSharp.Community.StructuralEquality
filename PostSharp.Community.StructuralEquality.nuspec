@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>PostSharp.Community.StructuralEquality</id>
-    <version>1.0-preview</version>
+    <version>1.1</version>
     <title>PostSharp.Community.StructuralEquality</title>
     <authors>Rafał Jasica, Simon Cropp, PostSharp Technologies and contributors</authors>
     <owners>PostSharp Technologies</owners>
@@ -11,12 +11,12 @@
     <projectUrl>https://github.com/postsharp/PostSharp.Community.StructuralEquality</projectUrl>
     <icon>icon.png</icon>
     <description>Automatically generates Equals and GetHashCode for annotated classes.</description>
-    <releaseNotes>Initial release.</releaseNotes>
+    <releaseNotes>First full non-preview release.</releaseNotes>
     <copyright>Copyright (c) Rafał Jasica, Simon Cropp, SharpCrafters s.r.o. and contributors</copyright>
     <tags>postsharp equals gethashcode equality ilweaving</tags>
     <dependencies>
       <group targetFramework=".NETStandard2.0">
-        <dependency id="PostSharp" version="6.6.3-preview" />
+        <dependency id="PostSharp" version="6.6.6" />
       </group>
     </dependencies>
   </metadata>
